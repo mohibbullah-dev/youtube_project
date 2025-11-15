@@ -1,10 +1,11 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_APIkEY,
+  api_secret: process.env.CLOUDINARY_SECRET,
   secure: true,
 });
-
-console.log("cloudinary.config: ", cloudinary.config());
 
 /////////////////////////
 // Uploads an image file
@@ -22,7 +23,6 @@ const uploadImage = async (localImagePath) => {
     if (!localImagePath) return null;
     // Upload the image
     const result = await cloudinary.uploader.upload(localImagePath, options);
-    console.log(result);
     return result;
   } catch (error) {
     console.error(error);
