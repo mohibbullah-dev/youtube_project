@@ -23,6 +23,8 @@ const uploadImage = async (localImagePath) => {
     if (!localImagePath) return null;
     // Upload the image
     const result = await cloudinary.uploader.upload(localImagePath, options);
+    console.log("cloudinary result: ", result);
+    fs.unlinkSync(localImagePath);
     return result;
   } catch (error) {
     console.error(error);

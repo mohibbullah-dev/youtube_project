@@ -16,16 +16,15 @@ const registerUser = asyncHandler(async (req, res) => {
   // return response
 
   const { username, email, password, fullName } = req.body;
-  console.log("req.body : ", req.body);
 
   if (
-    [username, email, password, fullName].some((field) => field.trim === "")
+    [username, email, password, fullName].some((field) => field.trim() === "")
   ) {
     throw new apiError(400, "all fields are required");
   }
 
   const isUserAlreadyExist = await User.findOne({
-    $or: [{ username, email }],
+    $or: [{ username }, { email }],
   });
   if (isUserAlreadyExist) {
     throw new apiError(409, "username or password already exist");
@@ -37,7 +36,7 @@ const registerUser = asyncHandler(async (req, res) => {
   if (
     req.files &&
     Array.isArray(req.files.coverImage) &&
-    req.files.coverImage.length < 0
+    req.files.coverImage.length > 0
   ) {
     coverImageLocalPath = req.files.coverImage[0].path;
   }
@@ -77,4 +76,80 @@ const registerUser = asyncHandler(async (req, res) => {
   res.status(201).json(new apiResponse(201, userCreated));
 });
 
-export { registerUser };
+const loginUser = asyncHandler(async (req, res) => {
+  console.log("hello i am form loginUser controller");
+  // get user details
+  // validate user deteials
+  // find user to db useing email or password
+  // validate the user response from db
+  // validate password
+  // generate accessToken & refreshToken
+  //  send refreshToken to db
+  // send accessToken & refreshToken to using cookies
+  // finally response to user
+
+  const email = (req?.body.email || "").trim().toLowerCase();
+  const username = (req?.body.username || "").trim().toLowerCase();
+  const password = (req?.body.password || "").trim().toLowerCase();
+
+  if (!email && !username) {
+    throw new apiError(400, "email or user is required");
+  }
+  const user = await User.findOne({
+    $or: [{ email }, { username }],
+  });
+  if (!user) throw new apiError(404, "user not found");
+
+  const isMatchPass = await user.isPasswordCorrect(password);
+  if (!isMatchPass) throw new apiError(400, "invalid credentials");
+
+  const accessToken = await user.generateAccessToken();
+  const refreshToken = await user.generateRefreshToken();
+
+  user.refreshToken = refreshToken;
+  await user.save({ validateBeforeSave: false });
+
+  const option = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  };
+  console.log("hello i am now on the response stage");
+
+  res
+    .status(201)
+    .cookie("accessToken", accessToken, option)
+    .cookie("refreshToken", refreshToken, option)
+    .json(
+      new apiResponse(
+        200,
+        {
+          accessToken: accessToken,
+          refershToke: refreshToken,
+        },
+        "login successfully done"
+      )
+    );
+});
+
+const loguotUser = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  const option = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  };
+  if (_id) {
+    await User.findByIdAndUpdate(_id, { $set: { refreshToken: "" } });
+  } else {
+    throw new apiError(400, "invalid id");
+  }
+
+  res
+    .status(204)
+    .clearCookie("accessToken", option)
+    .clearCookie("refreshToken", option)
+    .json(new apiResponse(200, "user succefully logout"));
+});
+
+export { loginUser, registerUser, loguotUser };
