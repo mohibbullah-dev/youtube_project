@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  generateNewAccessToken,
   loginUser,
   loguotUser,
   registerUser,
@@ -19,4 +20,5 @@ router.route("/register").post(
 router.route("/login").post(loginUser);
 
 router.route("/logout").delete(verifyToken, loguotUser);
+router.route("/renewAccessToken").get(generateNewAccessToken);
 export default router;

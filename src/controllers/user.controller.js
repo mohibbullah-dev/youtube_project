@@ -3,6 +3,7 @@ import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import uploadImage from "../utils/cloudinary.js";
+import jwt from "jsonwebtoken";
 
 const registerUser = asyncHandler(async (req, res) => {
   //  get user details from frontend
@@ -133,6 +134,12 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const loguotUser = asyncHandler(async (req, res) => {
+  // get userid from req.user you stored in verify function
+  // validate the user's id
+  // find the user using the id
+  // validate the user
+  // update the refreshToken by ""
+  // then clear the cookies from browser too
   const { _id } = req.user;
   const option = {
     httpOnly: true,
@@ -152,4 +159,39 @@ const loguotUser = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, "user succefully logout"));
 });
 
-export { loginUser, registerUser, loguotUser };
+const generateNewAccessToken = asyncHandler(async (req, res) => {
+  const incommingRefreshToken =
+    req.cookies?.refreshToken ||
+    req.headers?.authorization?.replace("Bearer ", "");
+  if (!incommingRefreshToken) throw new apiError(401, "unAuthorize request");
+  let decodedRefreshToken;
+  try {
+    decodedRefreshToken = await jwt.verify(
+      incommingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+    if (!decodedRefreshToken?.id)
+      throw new apiError(400, "refreshToken not contain valid info");
+    const user = await User.findById(decodedRefreshToken?.id);
+    if (!user) throw new apiError(404, "user not found");
+
+    if (user?.refreshToken !== incommingRefreshToken)
+      throw new apiError(415, "invalid refreshToken");
+    const accessToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
+    const option = {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    };
+    res
+      .status(201)
+      .cookie("accessToken", accessToken, option)
+      .cookie("refreshToken", refreshToken, option)
+      .json(new apiResponse(200, "accessToken renewed successfully"));
+  } catch (error) {
+    throw new apiError(401, error.message, "invalid token");
+  }
+});
+
+export { loginUser, registerUser, loguotUser, generateNewAccessToken };
