@@ -74,7 +74,7 @@ const registerUser = asyncHandler(async (req, res) => {
   );
   if (!userCreated) throw new apiError(500, "server internal error");
 
-  res.status(201).json(new apiResponse(201, userCreated));
+  return res.status(201).json(new apiResponse(201, userCreated));
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -117,7 +117,7 @@ const loginUser = asyncHandler(async (req, res) => {
   };
   console.log("hello i am now on the response stage");
 
-  res
+  return res
     .status(201)
     .cookie("accessToken", accessToken, option)
     .cookie("refreshToken", refreshToken, option)
@@ -152,7 +152,7 @@ const loguotUser = asyncHandler(async (req, res) => {
     throw new apiError(400, "invalid id");
   }
 
-  res
+  return res
     .status(204)
     .clearCookie("accessToken", option)
     .clearCookie("refreshToken", option)
@@ -184,7 +184,7 @@ const generateNewAccessToken = asyncHandler(async (req, res) => {
       secure: true,
       sameSite: "none",
     };
-    res
+    return res
       .status(201)
       .cookie("accessToken", accessToken, option)
       .cookie("refreshToken", refreshToken, option)
@@ -194,4 +194,162 @@ const generateNewAccessToken = asyncHandler(async (req, res) => {
   }
 });
 
-export { loginUser, registerUser, loguotUser, generateNewAccessToken };
+const changePassword = asyncHandler(async (req, res) => {
+  // get user's details
+  // validate user's details
+  // find the user to DB by req.user.id
+  // verify old password
+  // match confirm & password
+  //  save the new password to db
+  // then finally you send a response to frontend
+  // write a route with a middle called 'verifyToken'
+
+  const { oldPassword, newPassword, confirmPassword } = req.body;
+  if (!(oldPassword && newPassword & confirmPassword))
+    throw new apiError(400, "oldPassword required");
+  const user = await User.findById(req.user?.id);
+  console.log("user : ", user);
+  if (!user) throw new apiError(404, "user not found");
+  const isMatched = await user.isPasswordCorrect(oldPassword);
+  if (!isMatched) throw new apiError(401, "invalid oldPassword");
+  if (!(newPassword === confirmPassword))
+    throw new apiError(401, "wrong confirmPassword");
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: false });
+  return res
+    .status(200)
+    .json(new apiResponse(200, "password changed successfully"));
+});
+
+const updateUserDetails = asyncHandler(async (req, res) => {
+  // get user details from req.body
+  // validate them empty or filled
+  //  create a empty obeject called updateUser
+  // keep the user details to the empty object
+  // check username & email already exists if it is the thro error 'user already exists'
+  // then update the user details to db using update query
+  // finally return a res as a successful
+
+  const { username, email, fullName } = req?.body;
+  const updateUser = {};
+  if (username) updateUser.username = username.toLowerCase().trim();
+  if (email) updateUser.email = email.toLowerCase().trim();
+  if (fullName) updateUser.fullName = email.trim();
+
+  if (username || email) {
+    const usernameOremailExist = await User.findOne({
+      $or: [username ? { username } : null, email ? { email } : null].filter(
+        Boolean
+      ),
+      _id: { $ne: req.user.id },
+    });
+
+    if (usernameOremailExist)
+      throw new apiError(401, "username or email already exist");
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(req.user.id, updateUser, {
+    new: true,
+  }).select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .json(
+      new apiResponse(200, updatedUser, "user's details updated succefully")
+    );
+});
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+  const currentUser = await User.findById(req.user.id).select(
+    "-password -refreshToken"
+  );
+  if (!currentUser) throw new apiError(404, "user current user not found");
+  return res
+    .status(200)
+    .json(new apiResponse(200, currentUser, "cuurent user succefully fetched"));
+});
+
+const changeProfile = asyncHandler(async (req, res) => {
+  // get user profile using req.file
+  // validate it
+  // send it to cloudinary
+  // check cloudinary response empty or filled
+  // find the user wiht req.user.id
+  // update the db profile url with new one and public_id
+  //  save the user
+  // finally return a response
+  console.log(" req.file :", req.file);
+  const avatar = req.file?.path;
+
+  const updateProfile = {};
+  if (!avatar) throw new apiError(401, " avatar is required");
+
+  const response = await uploadImage(avatar);
+  if (!response)
+    throw new apiError(
+      500,
+      "something went wrong while uploading img to cloudinary"
+    );
+
+  if (response?.url) {
+    updateProfile["avatar.url"] = response.url;
+  }
+  if (response?.public_id) {
+    updateProfile["avatar.public_id"] = response.public_id;
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
+    { $set: updateProfile },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  if (!user) throw new apiError(404, "file cloudn't found");
+
+  return res
+    .status(200)
+    .json(new apiResponse(200, user, "profile updated successfully"));
+});
+
+const changeCoverImage = asyncHandler(async (req, res) => {
+  // same like avatar
+  const converImage = req.file?.path;
+  const updateConverImage = {};
+  if (!converImage) throw new apiError(400, "select a coverImage");
+  const response = await uploadImage(converImage);
+  if (!response)
+    throw new apiError(
+      500,
+      "something went wrong while uploading img to cloudinary"
+    );
+
+  if (response?.url) {
+    updateConverImage["coverImage.url"] = response?.url;
+  }
+  if (response?.public_id) {
+    updateConverImage["coverImage.public_id"] = response?.public_id;
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
+    { $set: updateConverImage },
+    { new: true }
+  ).select("-password -refreshToken");
+  if (!user) throw new apiError(200, "user cloudn't updated");
+
+  return res
+    .status(200)
+    .json(new apiResponse(200, user, "coverImage succfully done"));
+});
+
+export {
+  loginUser,
+  registerUser,
+  loguotUser,
+  generateNewAccessToken,
+  changePassword,
+  updateUserDetails,
+  getCurrentUser,
+  changeProfile,
+  changeCoverImage,
+};
