@@ -342,6 +342,67 @@ const changeCoverImage = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, user, "coverImage succfully done"));
 });
 
+const getChannelProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+  if (!username?.trim()) throw new apiError(400, "username is required");
+
+  const channelInfo = await User.aggregate([
+    {
+      $match: { username: username?.trim() },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribedTo",
+      },
+    },
+    {
+      $addFields: {
+        subscribersCount: { $size: "$subscribers" },
+        subscribedToCount: { $size: "$subscribedTo" },
+        IsSubscribed: {
+          $cond: {
+            if: { $in: [req.user?.id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        fullName: 1,
+        username: 1,
+        subscribersCount: 1,
+        subscribedToCount: 1,
+        IsSubscribed: 1,
+        email: 1,
+        avatar: 1,
+        coverImage: 1,
+      },
+    },
+  ]);
+
+  if (!channelInfo)
+    throw new apiError(500, "something went wrong while db queries");
+
+  console.log("getChannelProfile : ", channelInfo);
+
+  return res
+    .status(200)
+    .json(new apiResponse(200, channelInfo, "chennel profile fetched"));
+});
+
 export {
   loginUser,
   registerUser,
@@ -352,4 +413,5 @@ export {
   getCurrentUser,
   changeProfile,
   changeCoverImage,
+  getChannelProfile,
 };

@@ -4,6 +4,7 @@ import {
   changePassword,
   changeProfile,
   generateNewAccessToken,
+  getChannelProfile,
   getCurrentUser,
   loginUser,
   loguotUser,
@@ -34,4 +35,6 @@ router
 router
   .route("/changeCoverImage")
   .put(upload.single("converImage"), verifyToken, changeCoverImage);
+
+router.route("/getChnnelInfo/:username").get(verifyToken, getChannelProfile);
 export default router;
