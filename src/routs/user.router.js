@@ -31,10 +31,10 @@ router.route("/userDetailsUpdate").put(verifyToken, updateUserDetails);
 router.route("/me").get(verifyToken, getCurrentUser);
 router
   .route("/changeAvatar")
-  .put(upload.single("avatar"), verifyToken, changeProfile);
+  .put(verifyToken, upload.single("avatar"), changeProfile);
 router
   .route("/changeCoverImage")
-  .put(upload.single("converImage"), verifyToken, changeCoverImage);
+  .put(verifyToken, upload.single("converImage"), changeCoverImage);
 
 router.route("/getChnnelInfo/:username").get(verifyToken, getChannelProfile);
 export default router;

@@ -3,7 +3,7 @@ import mongoose, { Schema } from "mongoose";
 
 const videoSchema = new Schema({
 
-    woner: {
+    owner: {
         type: Schema.Types.ObjectId,
         ref: "User"
     },

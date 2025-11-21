@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { User } from "../models/user.medel.js";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
@@ -393,7 +394,7 @@ const getChannelProfile = asyncHandler(async (req, res) => {
     },
   ]);
 
-  if (!channelInfo)
+  if (!channelInfo.length)
     throw new apiError(500, "something went wrong while db queries");
 
   console.log("getChannelProfile : ", channelInfo);
@@ -402,6 +403,54 @@ const getChannelProfile = asyncHandler(async (req, res) => {
     .status(200)
     .json(new apiResponse(200, channelInfo, "chennel profile fetched"));
 });
+
+const getWatchHistory = asyncHandler(async(req, res)=>{
+  // lookup to Video-collection 
+  // a sub-pipeline into lookup 
+  // lookup to user to find video owner 
+  // write a $project pipeline into video owner lookup
+  // write a $addFields pipeline to overried owner with first value of array 
+  // finally extract the obejct from main pipeline array because pipeline always reture a array & return respons
+
+  const user = await User.aggregate([
+    {
+      $match: {_id: new mongoose.Types.ObjectId(req.user.id)}
+
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        pipeline:[
+          {
+            $lookup:{
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: {fullName: 1, username: 1, avatar: 1, email: 1}
+                },
+                {
+                  $addFields: {owner: {$first: "$owner"}}
+                  
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+
+  ])
+
+
+
+
+})
 
 export {
   loginUser,
