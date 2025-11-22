@@ -11,12 +11,12 @@ import {
   registerUser,
   updateUserDetails,
 } from "../controllers/user.controller.js";
-import { upload } from "../middlewares/multer.middleware.js";
+import { uploadImage } from "../middlewares/multer.middleware.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 const router = Router();
 
 router.route("/register").post(
-  upload.fields([
+  uploadImage.fields([
     { name: "avatar", maxCount: 1 },
     { name: "coverImage", maxCount: 1 },
   ]),
@@ -31,10 +31,10 @@ router.route("/userDetailsUpdate").put(verifyToken, updateUserDetails);
 router.route("/me").get(verifyToken, getCurrentUser);
 router
   .route("/changeAvatar")
-  .put(verifyToken, upload.single("avatar"), changeProfile);
+  .put(verifyToken, uploadImage.single("avatar"), changeProfile);
 router
   .route("/changeCoverImage")
-  .put(verifyToken, upload.single("converImage"), changeCoverImage);
+  .put(verifyToken, uploadImage.single("converImage"), changeCoverImage);
 
 router.route("/getChnnelInfo/:username").get(verifyToken, getChannelProfile);
 export default router;

@@ -3,7 +3,7 @@ import { User } from "../models/user.medel.js";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import uploadImage from "../utils/cloudinary.js";
+import { uploadImage } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -33,6 +33,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
+  console.log("avatarLocalPath :", req.files?.avatar[0]);
   let coverImageLocalPath;
 
   if (
@@ -48,6 +49,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const uploadedAvatarRes = await uploadImage(avatarLocalPath);
+  console.log("uploadedAvatarRes :", uploadedAvatarRes);
   const uploadedCoverImageRes = await uploadImage(coverImageLocalPath);
 
   console.log("uploadedAvatarRes: ", uploadedAvatarRes);
@@ -404,18 +406,17 @@ const getChannelProfile = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, channelInfo, "chennel profile fetched"));
 });
 
-const getWatchHistory = asyncHandler(async(req, res)=>{
-  // lookup to Video-collection 
-  // a sub-pipeline into lookup 
-  // lookup to user to find video owner 
+const getWatchHistory = asyncHandler(async (req, res) => {
+  // lookup to Video-collection
+  // a sub-pipeline into lookup
+  // lookup to user to find video owner
   // write a $project pipeline into video owner lookup
-  // write a $addFields pipeline to overried owner with first value of array 
+  // write a $addFields pipeline to overried owner with first value of array
   // finally extract the obejct from main pipeline array because pipeline always reture a array & return respons
 
   const user = await User.aggregate([
     {
-      $match: {_id: new mongoose.Types.ObjectId(req.user.id)}
-
+      $match: { _id: new mongoose.Types.ObjectId(req.user.id) },
     },
     {
       $lookup: {
@@ -423,34 +424,29 @@ const getWatchHistory = asyncHandler(async(req, res)=>{
         localField: "watchHistory",
         foreignField: "_id",
         as: "watchHistory",
-        pipeline:[
+        pipeline: [
           {
-            $lookup:{
+            $lookup: {
               from: "users",
               localField: "owner",
               foreignField: "_id",
-              as: "owner",
+              as: "videoOwner",
               pipeline: [
                 {
-                  $project: {fullName: 1, username: 1, avatar: 1, email: 1}
+                  $project: { fullName: 1, username: 1, avatar: 1, email: 1 },
                 },
-                {
-                  $addFields: {owner: {$first: "$owner"}}
-                  
-                }
-              ]
-            }
-          }
-        ]
-      }
-    }
+              ],
+            },
+          },
 
-  ])
-
-
-
-
-})
+          {
+            $addFields: { owner: { $first: "$videoOwner" } },
+          },
+        ],
+      },
+    },
+  ]);
+});
 
 export {
   loginUser,
