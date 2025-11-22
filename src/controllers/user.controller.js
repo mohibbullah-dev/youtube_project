@@ -58,9 +58,9 @@ const registerUser = asyncHandler(async (req, res) => {
   if (
     !uploadedAvatarRes ||
     !uploadedAvatarRes.public_id ||
-    uploadedAvatarRes.secure_url
+    !uploadedAvatarRes.secure_url
   )
-    throw new apiError("internal server error");
+    throw new apiError(500, "internal server error");
 
   const user = await User.create({
     username,
@@ -293,11 +293,7 @@ const changeProfile = asyncHandler(async (req, res) => {
   if (!avatar) throw new apiError(401, " avatar is required");
 
   const response = await uploadImage(avatar);
-  if (!response)
-    throw new apiError(
-      500,
-      "something went wrong while uploading img to cloudinary"
-    );
+  if (!response) throw new apiError(500, "Cloudinary image upload failed");
 
   if (response?.url) {
     updateProfile["avatar.url"] = response.url;
@@ -325,11 +321,7 @@ const changeCoverImage = asyncHandler(async (req, res) => {
   const updateConverImage = {};
   if (!converImage) throw new apiError(400, "select a coverImage");
   const response = await uploadImage(converImage);
-  if (!response)
-    throw new apiError(
-      500,
-      "something went wrong while uploading img to cloudinary"
-    );
+  if (!response) throw new apiError(500, "Cloudinary image upload failed");
 
   if (response?.url) {
     updateConverImage["coverImage.url"] = response?.url;
