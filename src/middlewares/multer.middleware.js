@@ -24,8 +24,7 @@ const uploadImage = multer({
 });
 // image ends from here
 
-
-// video statr here 
+// video statr here
 const videoStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "public/video_tem");
@@ -37,8 +36,9 @@ const videoStorage = multer.diskStorage({
 });
 
 const videoFilter = function (req, file, cb) {
-  if (file.mimetype.startsWith("video/")) cb(null, true);
-  else cb(new Error("Only video files allowed"));
+  if (file.mimetype.startsWith("video/") || file.mimetype.startsWith("image/"))
+    cb(null, true);
+  else cb(new Error("Only video files and thumbnails allowed"));
 };
 
 const uploadVideo = multer({

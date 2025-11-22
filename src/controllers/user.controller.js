@@ -55,7 +55,12 @@ const registerUser = asyncHandler(async (req, res) => {
   console.log("uploadedAvatarRes: ", uploadedAvatarRes);
   console.log("uploadedCoverImageRes: ", uploadedCoverImageRes);
 
-  if (!uploadedAvatarRes) throw new apiError("internal server error");
+  if (
+    !uploadedAvatarRes ||
+    !uploadedAvatarRes.public_id ||
+    uploadedAvatarRes.secure_url
+  )
+    throw new apiError("internal server error");
 
   const user = await User.create({
     username,

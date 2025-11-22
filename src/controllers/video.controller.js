@@ -1,19 +1,51 @@
+import { Video } from "../models/video.model.js";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import { uploadVideo } from "../utils/cloudinary.js";
+import { uploadImage, uploadVideo } from "../utils/cloudinary.js";
 
 const uploadYoutubeVideo = asyncHandler(async (req, res) => {
-  const videoLocalPath = req.file?.path;
+  const videoLocalPath = req.files?.video[0]?.path;
+  const videoThumbnaiLocalPath = req.files?.thumbnai[0]?.path;
+  const { description } = req.body;
+  if (!description || description.trim() === "")
+    throw new apiError("400", "video description is required");
   console.log("videoLocalPath :", videoLocalPath);
   if (!videoLocalPath) throw new apiError(400, "video file is required");
-  const CloudinaryResponse = await uploadVideo(videoLocalPath);
-  console.log("video CloudinaryResponse :", CloudinaryResponse);
+  const cloudinaryVideoResponse = await uploadVideo(videoLocalPath);
+  const cloudinaryVideoThumbnailResponse = await uploadImage(
+    videoThumbnaiLocalPath
+  );
+  if (
+    !cloudinaryVideoResponse ||
+    !cloudinaryVideoResponse.public_id ||
+    !cloudinaryVideoResponse.secure_url ||
+    !cloudinaryVideoResponse.duration
+  )
+    throw new apiError(200, "cloudinary video upload filaid");
+
+  if (!cloudinaryVideoThumbnailResponse)
+    throw new apiError(500, "cloudinaryVideoThumbnailResponse is faild");
+
+  const videoSavedToDb = await Video.create({
+    title: req.files?.video[0]?.originalname,
+    description,
+    video: {
+      url: cloudinaryVideoResponse?.secure_url,
+      public_id: cloudinaryVideoResponse?.public_id,
+    },
+    videoThumbnail: {
+      url: cloudinaryVideoThumbnailResponse.secure_url || "",
+      public_id: cloudinaryVideoThumbnailResponse.public_id || "",
+    },
+    owner: req.user?.id,
+  });
+  if (!videoSavedToDb) throw new apiError(500, "failed to save to database");
 
   return res
-    .status(200)
+    .status(201)
     .json(
-      new apiResponse(200, CloudinaryResponse, "video upload succeefully done")
+      new apiResponse(200, videoSavedToDb, "video saved to db successfully")
     );
 });
 

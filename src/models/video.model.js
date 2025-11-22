@@ -1,48 +1,52 @@
-import { urlencoded } from "express";
 import mongoose, { Schema } from "mongoose";
 
-const videoSchema = new Schema({
-
+const videoSchema = new Schema(
+  {
     owner: {
-        type: Schema.Types.ObjectId,
-        ref: "User"
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
-    video:{
-        url: {
-            type: String,
-            required: true
-        },
-        public_id: {
-            type: String,
-        }
-    },
-    title:{
-        type:String,
-        required: true,
-        index: true
-    },
-
-    description:{
+    video: {
+      url: {
         type: String,
-        index: true
+        required: [true, "video file is required"],
+      },
+      public_id: {
+        type: String,
+        required: [true, "video public_id is required"],
+      },
     },
-    videoDuration:{
-        type: Number,
+    title: {
+      type: String,
+      required: true,
+      index: true,
+      unique: true,
     },
-    videoThumbnail:{
-        url: {
-            type: String,
-        },
-        public_id: {
-            type: String
-        }
+
+    description: {
+      type: String,
+      index: true,
+      required: [true, "description is required"],
+      trim: true,
+      minlength: 1,
     },
-    views : {
-        type: Number,
-        required: true
-    }
+    videoDuration: {
+      type: Number,
+    },
+    videoThumbnail: {
+      url: {
+        type: String,
+      },
+      public_id: {
+        type: String,
+      },
+    },
+    views: {
+      type: Number,
+      default: 0,
+    },
+  },
+  { timestamps: true }
+);
 
-
-},{})
-
-export const Video = mongoose.model("Video", videoSchema)
+export const Video = mongoose.model("Video", videoSchema);
