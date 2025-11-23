@@ -355,7 +355,7 @@ const getChannelProfile = asyncHandler(async (req, res) => {
       $lookup: {
         from: "subscriptions",
         localField: "_id",
-        foreignField: "subscriber",
+        foreignField: "channel",
         as: "subscribers",
       },
     },
@@ -363,7 +363,7 @@ const getChannelProfile = asyncHandler(async (req, res) => {
       $lookup: {
         from: "subscriptions",
         localField: "_id",
-        foreignField: "channel",
+        foreignField: "subscriber",
         as: "subscribedTo",
       },
     },
@@ -444,6 +444,12 @@ const getWatchHistory = asyncHandler(async (req, res) => {
       },
     },
   ]);
+
+  if (!user) throw new Error(400, "user not found");
+
+  return res
+    .status(200)
+    .json(new Response(200, user, "fetched watchHistory succefully"));
 });
 
 export {
@@ -457,4 +463,5 @@ export {
   changeProfile,
   changeCoverImage,
   getChannelProfile,
+  getWatchHistory,
 };

@@ -1,7 +1,10 @@
 import { Router } from "express";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 import { uploadVideo } from "../middlewares/multer.middleware.js";
-import { uploadYoutubeVideo } from "../controllers/video.controller.js";
+import {
+  playVideo,
+  uploadYoutubeVideo,
+} from "../controllers/video.controller.js";
 const router = Router();
 
 router.route("/upload-video").post(
@@ -12,5 +15,7 @@ router.route("/upload-video").post(
   ]),
   uploadYoutubeVideo
 );
+
+router.route("/palyVideo/:videoId").get(verifyToken, playVideo);
 
 export default router;

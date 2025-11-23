@@ -6,6 +6,7 @@ import {
   generateNewAccessToken,
   getChannelProfile,
   getCurrentUser,
+  getWatchHistory,
   loginUser,
   loguotUser,
   registerUser,
@@ -37,4 +38,6 @@ router
   .put(verifyToken, uploadImage.single("converImage"), changeCoverImage);
 
 router.route("/getChnnelInfo/:username").get(verifyToken, getChannelProfile);
+
+router.route("/watchHistory").get(verifyToken, getWatchHistory);
 export default router;

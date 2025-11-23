@@ -1,3 +1,4 @@
+import { User } from "../models/user.medel.js";
 import { Video } from "../models/video.model.js";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
@@ -49,4 +50,22 @@ const uploadYoutubeVideo = asyncHandler(async (req, res) => {
     );
 });
 
-export { uploadYoutubeVideo };
+const playVideo = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  const videoId = req.params?.videoId;
+  if (!videoId && !userId)
+    throw new Error(404, "video and userId are required");
+
+  const video = await Video.findById(videoId);
+  if (!video) throw new Error(404, "video not found");
+
+  const user = await User.findById(userId);
+  if (!user) throw new Error(404, "user not found");
+  user.watchHistory.push(video?._id);
+  await user.save({ validateBeforeSave: false });
+  return res
+    .status(200)
+    .json(new apiResponse(200, { video, user }, "video played succfully"));
+});
+
+export { uploadYoutubeVideo, playVideo };
