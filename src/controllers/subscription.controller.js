@@ -44,4 +44,27 @@ const subcribToChannel = asyncHandler(async (req, res) => {
   }
 });
 
-export { subcribToChannel };
+const unsubscribeToChannel = asyncHandler(async (req, res) => {
+  // take the logedin-user from req.user.id who want to subscribe
+  // take the channel_id who is channel owner from req.params
+  // check them empty or not
+  // findAndDelete data to database
+  // check the database response
+  // return a response to user
+
+  const subscriberId = req.user?.id;
+  const channelId = req.params?.channelId;
+  if (!subscriberId || !channelId)
+    throw new apiError(400, "subscriber & channel is required");
+  const unsubscribe = await Subscription.findOneAndDelete({
+    subscriber: subscriberId,
+    channel: channelId,
+  });
+  if (!unsubscribe) throw new apiError(404, "subscriber not found");
+
+  return res
+    .status(204)
+    .json(new apiResponse(200, unsubscribe, "unsubscribed succefully"));
+});
+
+export { subcribToChannel, unsubscribeToChannel };

@@ -344,6 +344,7 @@ const changeCoverImage = asyncHandler(async (req, res) => {
 
 const getChannelProfile = asyncHandler(async (req, res) => {
   const { username } = req.params;
+  const currentUserId = new mongoose.Types.ObjectId(req.user.id);
   if (!username?.trim()) throw new apiError(400, "username is required");
 
   const channelInfo = await User.aggregate([
@@ -372,7 +373,7 @@ const getChannelProfile = asyncHandler(async (req, res) => {
         subscribedToCount: { $size: "$subscribedTo" },
         IsSubscribed: {
           $cond: {
-            if: { $in: [req.user?.id, "$subscribers.subscriber"] },
+            if: { $in: [currentUserId, "$subscribers.subscriber"] },
             then: true,
             else: false,
           },
