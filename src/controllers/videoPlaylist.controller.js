@@ -5,7 +5,7 @@ import { apiError } from "../utils/apiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { apiResponse } from "../utils/apiResponse.js";
 
-const videoPlaylist = asyncHandler(async (req, res) => {
+const videoPlaylistCreate = asyncHandler(async (req, res) => {
   const { name, description } = req.body;
   const videoId = req.params?.videoId;
   const userId = req.user?.id;
@@ -31,4 +31,71 @@ const videoPlaylist = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, videoList, "videoPlaysist created succefully"));
 });
 
-export { videoPlaylist };
+const videoUploadToPlaylist = asyncHandler(async (req, res) => {
+  const { playListId, videoId } = req.params;
+  if (!playListId || !videoId)
+    throw new apiError(400, "playList and video are required");
+  const video = await Video.findById(videoId);
+  if (!video) throw new apiError(404, "video not found");
+
+  const playlist = await VideoPlaylist.findByIdAndUpdate(
+    playListId,
+    { $addToSet: { videos: video._id } },
+    { new: true }
+  );
+  if (!playlist) throw new apiError(404, "playlist not found");
+
+  return res
+    .status(200)
+    .json(new apiResponse(200, playlist, "video added to list succefully"));
+});
+
+const getVideoPlaylist = asyncHandler(async (req, res) => {
+  const playListId = req.params?.playListId;
+  if (!playListId) throw new apiError(404, "playList is required");
+  const playList = await VideoPlaylist.aggregate([
+    {
+      $match: { _id: new mongoose.Types.ObjectId(playListId) },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "videos",
+        foreignField: "_id",
+        as: "videos",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: { username: 1, avatar: 1, _id: 0 },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: { owner: { $first: "$owner" } },
+          },
+        ],
+        pipeline: [
+          {
+            $project: { views: 0, createdAt: 0, updatedAt: 0 },
+          },
+        ],
+      },
+    },
+  ]);
+  console.log("playList : ", playList);
+
+  if (!playList || playList.length === 0)
+    throw new apiError(404, "video playlist not found");
+  return res
+    .status(200)
+    .json(new apiResponse(200, playList, "playlist fetched"));
+});
+
+export { videoPlaylistCreate, getVideoPlaylist, videoUploadToPlaylist };
