@@ -18,9 +18,11 @@ app.use(express.static("public"));
 import userRouter from "./routs/user.router.js";
 import videoRouter from "./routs/video.router.js";
 import subcriptionRouter from "./routs/subscription.router.js";
+import videoPlaylistRouter from "./routs/videoPlalylist.router.js";
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/videos", videoRouter);
 app.use("/api/v1/subscription", subcriptionRouter);
+app.use("/api/v1/videoPlaylist", videoPlaylistRouter);
 
 export { app };
