@@ -431,25 +431,29 @@ const getWatchHistory = asyncHandler(async (req, res) => {
               as: "videoOwner",
               pipeline: [
                 {
-                  $project: { fullName: 1, username: 1, avatar: 1, email: 1 },
+                  $project: { fullName: 1, username: 1, avatar: 1 },
                 },
               ],
             },
           },
-
           {
-            $addFields: { owner: { $first: "$videoOwner" } },
+            $project: { owner: 0 },
           },
         ],
       },
+    },
+    {
+      $project: { username: 1, watchHistory: 1, avatar: 1 },
     },
   ]);
 
   if (!user) throw new Error(400, "user not found");
 
+  console.log("user: ", user);
+
   return res
     .status(200)
-    .json(new Response(200, user, "fetched watchHistory succefully"));
+    .json(new apiResponse(200, user, "fetched watchHistory succefully"));
 });
 
 export {

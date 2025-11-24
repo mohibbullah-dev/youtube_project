@@ -59,10 +59,13 @@ const playVideo = asyncHandler(async (req, res) => {
   const video = await Video.findById(videoId);
   if (!video) throw new Error(404, "video not found");
 
-  const user = await User.findById(userId);
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { $addToSet: { watchHistory: video._id } },
+    { new: true }
+  );
   if (!user) throw new Error(404, "user not found");
-  user.watchHistory.push(video?._id);
-  await user.save({ validateBeforeSave: false });
+
   return res
     .status(200)
     .json(new apiResponse(200, { video, user }, "video played succfully"));
