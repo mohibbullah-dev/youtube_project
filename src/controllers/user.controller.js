@@ -80,7 +80,7 @@ const registerUser = asyncHandler(async (req, res) => {
   const userCreated = await User.findById(user._id).select(
     "-password -refreshToken"
   );
-  if (!userCreated) throw new apiError(500, "server internal error");
+  if (!userCreated) throw new apiError(404, "user not found");
 
   return res.status(201).json(new apiResponse(201, userCreated));
 });
@@ -394,10 +394,8 @@ const getChannelProfile = asyncHandler(async (req, res) => {
     },
   ]);
 
-  if (!channelInfo.length)
-    throw new apiError(500, "something went wrong while db queries");
-
-  console.log("getChannelProfile : ", channelInfo);
+  if (channelInfo.length===0)
+    throw new apiError(404, "channelInfo not found");
 
   return res
     .status(200)

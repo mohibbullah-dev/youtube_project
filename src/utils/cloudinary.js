@@ -23,7 +23,6 @@ const uploadImage = async (localImagePath) => {
       localImagePath,
       Image_upload_options
     );
-    console.log("cloudinary result: ", result);
     if (fs.existsSync(localImagePath)) fs.unlinkSync(localImagePath);
 
     return result;

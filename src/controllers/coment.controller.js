@@ -45,7 +45,7 @@ const createTweetComment = asyncHandler(async (req, res) => {
   });
 
   if (!comment)
-    throw new apiError(400, "something went wrong while comment creation");
+    throw new apiError(500, "something went wrong while comment creation");
   return res
     .status(201)
     .json(new apiResponse(200, comment, "comment created successfully"));
