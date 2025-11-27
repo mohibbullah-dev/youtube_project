@@ -42,6 +42,15 @@ const userSchema = new Schema(
       url: String,
       public_id: String,
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    status: {
+      type: String,
+      enum: ["active", "inactive", "suspended"],
+      default: "active",
+    },
     refreshToken: {
       type: String,
     },
