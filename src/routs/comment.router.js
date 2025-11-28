@@ -3,6 +3,7 @@ import { verifyToken } from "../middlewares/auth.middleware.js";
 import {
   createTweetComment,
   createVideoComment,
+  getVideoComments,
 } from "../controllers/coment.controller.js";
 
 const router = Router();
@@ -12,5 +13,7 @@ router
 router
   .route("/createTweetComment/:tweetId")
   .post(verifyToken, createTweetComment);
+
+router.route("/getAllComments").get(verifyToken, getVideoComments);
 
 export default router;

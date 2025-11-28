@@ -30,6 +30,74 @@ const createVideoComment = asyncHandler(async (req, res) => {
     .status(201)
     .json(new apiResponse(200, comment, "comment created successfully"));
 });
+
+const deleteVidoeComment = asyncHandler(async (req, res) => {
+  const videoCommentId = req.params.videoCommentId;
+  if (!videoCommentId) throw new apiError(400, "videoComment is required");
+
+  await Comment.findByIdAndDelete(videoCommentId);
+  return res
+    .status(204)
+    .json(new apiResponse(204, "deleted comment succefully"));
+});
+
+const UpdateVidoeComment = asyncHandler(async (req, res) => {
+  const videoCommentId = req.params.videoCommentId;
+  const { content } = req.body;
+
+  if (!videoCommentId) throw new apiError(400, "videoComment is required");
+  const updateComment = await Comment.findByIdAndUpdate(
+    videoCommentId,
+    { content },
+    { new: true }
+  );
+  if (!updateComment)
+    throw new apiError(404, updateComment, "comment not found");
+
+  await Comment.findByIdAndDelete(videoCommentId);
+  return res
+    .status(204)
+    .json(new apiResponse(204, "deleted comment succefully"));
+});
+
+const getVideoComments = asyncHandler(async (req, res) => {
+  const VideoComments = await Comment.aggregate([
+    {
+      $match: { onModel: "Video" },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owners",
+        pipeline: [
+          {
+            $project: {
+              avatar: 1,
+              username: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: { owner: { $first: "$owners" } },
+    },
+    {
+      $project: { owners: 0 },
+    },
+  ]);
+  if (VideoComments.length === 0)
+    throw new apiError(404, "videoComment not found");
+
+  return res
+    .status(200)
+    .json(
+      new apiResponse(200, VideoComments, "videoComments succfully fetched")
+    );
+});
+
 const createTweetComment = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
   const tweetId = req.params?.tweetId;
@@ -51,4 +119,10 @@ const createTweetComment = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, comment, "comment created successfully"));
 });
 
-export { createVideoComment, createTweetComment };
+export {
+  createVideoComment,
+  createTweetComment,
+  deleteVidoeComment,
+  UpdateVidoeComment,
+  getVideoComments,
+};
