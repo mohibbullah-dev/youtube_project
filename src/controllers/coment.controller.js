@@ -128,6 +128,44 @@ const MyVideoComments = asyncHandler(async (req, res) => {
     .status(200)
     .json(new apiResponse(200, VideoComment, "fetched myVideoComments"));
 });
+const MyTweetComments = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  if (!userId) throw new apiError(400, "user is required");
+  const tweetVideos = await Comment.aggregate([
+    {
+      $match: { owner: new mongoose.Types.ObjectId(userId), onModel: "Tweet" },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owners",
+        pipeline: [
+          {
+            $project: {
+              avatar: 1,
+              username: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: { owner: { $first: "$owners" } },
+    },
+    {
+      $project: { owners: 0 },
+    },
+  ]);
+
+  if (tweetVideos.length === 0)
+    throw new apiError(404, "tweetVideos not found");
+
+  return res
+    .status(200)
+    .json(new apiResponse(200, tweetVideos, "myTweetVideo fetched sucefully"));
+});
 
 const createTweetComment = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
@@ -157,4 +195,5 @@ export {
   getVideoComments,
   commentUpdate,
   MyVideoComments,
+  MyTweetComments,
 };
