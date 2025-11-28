@@ -58,8 +58,8 @@ const deleteVideo = asyncHandler(async (req, res) => {
   if (!deleteVideo) throw new apiError(404, "video not found");
 
   return res
-    .status(201)
-    .json(new apiResponse(201, deleteVideo, "video delete succefully"));
+    .status(204)
+    .json(new apiResponse(204, deleteVideo, "video delete succefully"));
 });
 
 const playVideo = asyncHandler(async (req, res) => {

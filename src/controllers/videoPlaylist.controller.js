@@ -12,16 +12,12 @@ const videoPlaylistCreate = asyncHandler(async (req, res) => {
 
   if (!name) throw new apiError(400, "name is required");
 
-  if (!videoId && !userId)
-    throw new apiError(400, "vodeo and user are required");
-
-  const video = await Video.findById(videoId);
-  if (!video) throw new apiError(404, "video not found");
+  if (!userId) throw new apiError(400, "vodeo and user are required");
 
   const videoList = await VideoPlaylist.create({
     name,
     description: description || "",
-    videos: [video._id],
+    videos: [],
     owner: userId,
   });
   if (!videoList) throw new apiError(500, "videoList creation faild");
@@ -98,4 +94,21 @@ const getVideoPlaylist = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, playList, "playlist fetched"));
 });
 
-export { videoPlaylistCreate, getVideoPlaylist, videoUploadToPlaylist };
+const deleteVideoPlaylist = asyncHandler(async (req, res) => {
+  const playlistId = req.params?.playlistId;
+  if (!playlistId) throw new apiError(400, "playlist is requried");
+
+  const deletePlaylist = await VideoPlaylist.findByIdAndDelete(playlistId);
+  if (!deletePlaylist) throw new apiError(404, "videoPlaylist not found");
+
+  return res
+    .status(204)
+    .json(new apiResponse(204, deletePlaylist, "playlist deleted succefully"));
+});
+
+export {
+  videoPlaylistCreate,
+  getVideoPlaylist,
+  videoUploadToPlaylist,
+  deleteVideoPlaylist,
+};
