@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Comment } from "../models/comment.mode.js";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
@@ -95,6 +96,39 @@ const getVideoComments = asyncHandler(async (req, res) => {
     );
 });
 
+const MyVideoComments = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  if (!userId) throw new apiError(400, "user is required");
+  const VideoComment = await Comment.aggregate([
+    {
+      $match: { owner: new mongoose.Types.ObjectId(userId), onModel: "Video" },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "users",
+        pipeline: [
+          {
+            $project: { avatar: 1, username: 1 },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: { owner: { $first: "$users" } },
+    },
+    {
+      $project: { users: 0 },
+    },
+  ]);
+  if (VideoComment.length === 0) throw new apiError(404, "comments not found");
+  return res
+    .status(200)
+    .json(new apiResponse(200, VideoComment, "fetched myVideoComments"));
+});
+
 const createTweetComment = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
   const tweetId = req.params?.tweetId;
@@ -122,4 +156,5 @@ export {
   deleteComment,
   getVideoComments,
   commentUpdate,
+  MyVideoComments,
 };

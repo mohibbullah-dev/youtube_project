@@ -6,6 +6,7 @@ import {
   createVideoComment,
   deleteComment,
   getVideoComments,
+  MyVideoComments,
 } from "../controllers/coment.controller.js";
 
 const router = Router();
@@ -17,7 +18,8 @@ router
   .post(verifyToken, createTweetComment);
 
 router.route("/getAllComments").get(verifyToken, getVideoComments);
-router.route("/deleteComent/:CommentId").delete(verifyToken, deleteComment);
+router.route("/deleteComment/:CommentId").delete(verifyToken, deleteComment);
 router.route("/updateComment/:CommentId").put(verifyToken, commentUpdate);
+router.route("/getMyVideoComment").get(verifyToken, MyVideoComments);
 
 export default router;
