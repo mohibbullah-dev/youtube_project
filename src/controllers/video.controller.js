@@ -50,6 +50,18 @@ const uploadYoutubeVideo = asyncHandler(async (req, res) => {
     );
 });
 
+const deleteVideo = asyncHandler(async (req, res) => {
+  const videoId = req.params?.videoId;
+  if (!videoId) throw new apiError(400, "video is required");
+
+  const deleteVideo = await Video.findByIdAndDelete(videoId);
+  if (!deleteVideo) throw new apiError(404, "video not found");
+
+  return res
+    .status(201)
+    .json(new apiResponse(201, deleteVideo, "video delete succefully"));
+});
+
 const playVideo = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
   const videoId = req.params?.videoId;
@@ -71,4 +83,4 @@ const playVideo = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, { video, user }, "video played succfully"));
 });
 
-export { uploadYoutubeVideo, playVideo };
+export { uploadYoutubeVideo, playVideo, deleteVideo };

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 import { uploadVideo } from "../middlewares/multer.middleware.js";
 import {
+  deleteVideo,
   playVideo,
   uploadYoutubeVideo,
 } from "../controllers/video.controller.js";
@@ -17,5 +18,6 @@ router.route("/upload-video").post(
 );
 
 router.route("/palyVideo/:videoId").get(verifyToken, playVideo);
+router.route("/deleteVideo/:videoId").delete(verifyToken, deleteVideo);
 
 export default router;
