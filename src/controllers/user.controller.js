@@ -5,6 +5,7 @@ import { apiResponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { uploadImage } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
+import { sendEmail, verifyMailFormat, verifyOtpFormat } from "../utils/mail.js";
 
 const registerUser = asyncHandler(async (req, res) => {
   //  get user details from frontend
@@ -76,11 +77,22 @@ const registerUser = asyncHandler(async (req, res) => {
       public_id: uploadedCoverImageRes?.public_id || "",
     },
   });
+  if (!user) throw new apiError(500, "user creation failed");
 
   const userCreated = await User.findById(user._id).select(
     "-password -refreshToken"
   );
   if (!userCreated) throw new apiError(404, "user not found");
+
+  const token = await userCreated.jwtToken();
+  if (token) {
+    const verifyUrl = `${process.env.APP_URL}/api/v1/users/verify/?token=${token}`;
+    sendEmail({
+      email,
+      subject: "verify your email",
+      mailformat: verifyMailFormat(fullName, verifyUrl),
+    });
+  }
 
   return res.status(201).json(new apiResponse(201, userCreated));
 });
@@ -227,6 +239,65 @@ const changePassword = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new apiResponse(200, "password changed successfully"));
+});
+
+const forgetPassword = asyncHandler(async (req, res) => {
+  // get the email form user
+  // verify it if empty or not
+  // make a random otp
+  const { email } = req.body;
+  if (!email) throw new apiError(400, "email is required");
+  const user = await User.findOne({ email });
+  if (!user) throw new apiError(404, "user not found");
+
+  const otp = Math.floor(100000 + Math.random() * 900000);
+  if (!otp) throw new apiError(400, "otp generation faild");
+
+  sendEmail({
+    email,
+    subject: "reset your password",
+    mailformat: verifyOtpFormat(user.fullName, otp),
+  });
+
+  user.resetPassOtp = otp;
+  user.resetPassOtpExpiredIn = Date.now() + 5 * 60 * 1000;
+  await user.save({ validateBeforeSave: false });
+
+  return res.status(200).json(new apiResponse(200, "otp sent"));
+});
+
+const verifyOtp = asyncHandler(async (req, res) => {
+  const { otp } = req.body;
+  const user = await User.findOne({ resetPassOtp: otp });
+  if (user.resetPassOtpExpiredIn < Date.now()) {
+    user.resetPassOtp = null;
+    user.resetPassOtpExpiredIn = null;
+    await user.save({ validateBeforeSave: false });
+    throw new apiError(400, "invalid otp");
+  }
+  if (!user) {
+    throw new apiError(400, "invalid otp");
+  }
+  return res.status(200).json(new apiResponse(200, "otp verified"));
+});
+
+const resetPasswrod = asyncHandler(async (req, res) => {
+  const { otp, password } = req.body;
+  if (!otp || !password)
+    throw new apiError(400, "otp and password is required");
+  const user = await User.findOne({ resetPassOtp: otp });
+  if (!user) throw new apiError(404, "invalid otp");
+
+  if (user.resetPassOtpExpiredIn < Date.now()) {
+    user.resetPassOtp = null;
+    user.resetPassOtpExpiredIn = null;
+    throw new apiError(400, "invalid otp");
+  }
+  user.password = password;
+
+  await user.save({ validateBeforeSave: false });
+
+  return res.status(200).json(new apiResponse(200, "resetPasswore succefully"));
 });
 
 const updateUserDetails = asyncHandler(async (req, res) => {
@@ -394,7 +465,7 @@ const getChannelProfile = asyncHandler(async (req, res) => {
     },
   ]);
 
-  if (channelInfo.length===0)
+  if (channelInfo.length === 0)
     throw new apiError(404, "channelInfo not found");
 
   return res
@@ -466,4 +537,7 @@ export {
   changeCoverImage,
   getChannelProfile,
   getWatchHistory,
+  forgetPassword,
+  verifyOtp,
+  resetPasswrod,
 };

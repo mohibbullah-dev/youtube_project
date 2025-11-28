@@ -3,6 +3,7 @@ import {
   changeCoverImage,
   changePassword,
   changeProfile,
+  forgetPassword,
   generateNewAccessToken,
   getChannelProfile,
   getCurrentUser,
@@ -10,7 +11,9 @@ import {
   loginUser,
   loguotUser,
   registerUser,
+  resetPasswrod,
   updateUserDetails,
+  verifyOtp,
 } from "../controllers/user.controller.js";
 import { uploadImage } from "../middlewares/multer.middleware.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
@@ -40,4 +43,8 @@ router
 router.route("/getChnnelInfo/:username").get(verifyToken, getChannelProfile);
 
 router.route("/watchHistory").get(verifyToken, getWatchHistory);
+router.route("/forgetPass").post(verifyToken, forgetPassword);
+router.route("/verifyOtp").post(verifyToken, verifyOtp);
+router.route("/resetPass").post(verifyToken, resetPasswrod);
+
 export default router;

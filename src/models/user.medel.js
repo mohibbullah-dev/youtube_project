@@ -46,6 +46,14 @@ const userSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    resetPassOtp: {
+      type: String,
+      default: null,
+    },
+    resetPassOtpExpiredIn: {
+      type: Date,
+      default: null,
+    },
     status: {
       type: String,
       enum: ["active", "inactive", "suspended"],
@@ -72,6 +80,11 @@ userSchema.pre("save", async function (next) {
 
 userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
+};
+userSchema.methods.jwtToken = function () {
+  return jwt.sign({ id: this._id }, process.env.JWT_TOKEN_SECRET, {
+    expiresIn: process.env.JWT_TOKEN_EXPIREDIN,
+  });
 };
 
 userSchema.methods.generateRefreshToken = function () {

@@ -1,11 +1,16 @@
 import nodemailer from "nodemailer";
 import Mailgen from "mailgen";
+import { apiError } from "./apiError.js";
 
 async function sendEmail(option) {
+  if (!option.email || !option.subject || !option.mailformat) {
+    throw new apiError(400, "Invalid email options");
+  }
+  console.log("option :", option);
   const transporter = nodemailer.createTransport({
     host: process.env.MAIL_SERVICE,
     port: process.env.MAIL_PORT,
-    secure: true,
+    secure: false,
     auth: {
       user: process.env.MAIL_USER,
       pass: process.env.MAIL_PASS,
@@ -20,13 +25,15 @@ async function sendEmail(option) {
 
   try {
     await transporter.sendMail({
-      from: "youtueb <contact34@gmail.com",
+      from: "youtueb <contact34@gmail.com>",
       to: option.email,
       subject: option.subject,
       text: emailText,
       html: emailBody,
     });
-  } catch (error) {}
+  } catch (error) {
+    throw new apiError(500, error.message);
+  }
 }
 
 function mailConfig(mailformat) {
@@ -63,5 +70,21 @@ const verifyMailFormat = (name, verifyToken) => {
     },
   };
 };
+const verifyOtpFormat = (name, otp) => {
+  return {
+    body: {
+      name: name,
+      intro: "Welcome to this email! We're very excited to have you on verify.",
+      action: {
+        instructions: "To verify your account, please click here:",
+        button: {
+          color: "#22BC66", // Optional action button color
+          text: otp,
+          link: null,
+        },
+      },
+    },
+  };
+};
 
-export { sendEmail, verifyMailFormat };
+export { sendEmail, verifyMailFormat, verifyOtpFormat };
