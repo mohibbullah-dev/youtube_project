@@ -86,7 +86,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const token = await userCreated.jwtToken();
   if (token) {
-    const verifyUrl = `${process.env.APP_URL}/api/v1/users/verify/?token=${token}`;
+    const verifyUrl = `${process.env.APP_URL}/api/v1/users/verifyEmail/?token=${token}`;
     sendEmail({
       email,
       subject: "verify your email",
@@ -95,6 +95,27 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   return res.status(201).json(new apiResponse(201, userCreated));
+});
+
+const verifyEmail = asyncHandler(async (req, res) => {
+  const { token } = req.query;
+  if (!token) throw new apiError(400, "invalid url");
+  console.log("token :", token);
+  let decodedToken;
+  try {
+    decodedToken = await jwt.verify(token, process.env.JWT_TOKEN_SECRET);
+    if (!decodedToken?.id) throw new apiError(400, "invalid verifyUrl");
+    const user = await User.findById(decodedToken?.id);
+    if (!user) throw new apiError(400, "invalid verifyToken");
+    if (user?.isVerified) throw new apiError(400, "user already verified");
+    user.isVerified = true;
+    await user.save({ validateBeforeSave: false });
+  } catch (error) {
+    throw new apiError(400, error.message);
+  }
+  return res
+    .status(200)
+    .json(new apiResponse(200, "email verified succefully"));
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -120,6 +141,8 @@ const loginUser = asyncHandler(async (req, res) => {
     $or: [{ email }, { username }],
   });
   if (!user) throw new apiError(404, "user not found");
+  if (user.isVerified === false)
+    throw new apiError(400, "you are not verified");
 
   const isMatchPass = await user.isPasswordCorrect(password);
   if (!isMatchPass) throw new apiError(400, "invalid credentials");
@@ -540,4 +563,5 @@ export {
   forgetPassword,
   verifyOtp,
   resetPasswrod,
+  verifyEmail,
 };

@@ -13,6 +13,7 @@ import {
   registerUser,
   resetPasswrod,
   updateUserDetails,
+  verifyEmail,
   verifyOtp,
 } from "../controllers/user.controller.js";
 import { uploadImage } from "../middlewares/multer.middleware.js";
@@ -26,6 +27,7 @@ router.route("/register").post(
   ]),
   registerUser
 );
+router.route("/verifyEmail").get(verifyEmail);
 
 router.route("/login").post(loginUser);
 router.route("/logout").delete(verifyToken, loguotUser);
