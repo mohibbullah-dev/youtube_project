@@ -31,33 +31,30 @@ const createVideoComment = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, comment, "comment created successfully"));
 });
 
-const deleteVidoeComment = asyncHandler(async (req, res) => {
-  const videoCommentId = req.params.videoCommentId;
-  if (!videoCommentId) throw new apiError(400, "videoComment is required");
+const deleteComment = asyncHandler(async (req, res) => {
+  const CommentId = req.params.CommentId;
+  if (!CommentId) throw new apiError(400, "clientomment is required");
 
-  await Comment.findByIdAndDelete(videoCommentId);
+  await Comment.findByIdAndDelete(CommentId);
   return res
     .status(204)
     .json(new apiResponse(204, "deleted comment succefully"));
 });
 
-const UpdateVidoeComment = asyncHandler(async (req, res) => {
-  const videoCommentId = req.params.videoCommentId;
+const commentUpdate = asyncHandler(async (req, res) => {
   const { content } = req.body;
-
-  if (!videoCommentId) throw new apiError(400, "videoComment is required");
+  const CommentId = req.params.CommentId;
+  if (!CommentId && !content)
+    throw new apiError(400, "comment & content are required");
   const updateComment = await Comment.findByIdAndUpdate(
-    videoCommentId,
+    CommentId,
     { content },
     { new: true }
   );
-  if (!updateComment)
-    throw new apiError(404, updateComment, "comment not found");
-
-  await Comment.findByIdAndDelete(videoCommentId);
+  if (!updateComment) throw new apiError(404, "videoComment not found");
   return res
-    .status(204)
-    .json(new apiResponse(204, "deleted comment succefully"));
+    .status(200)
+    .json(new apiResponse(200, updateComment, "comment updated succefully"));
 });
 
 const getVideoComments = asyncHandler(async (req, res) => {
@@ -122,7 +119,7 @@ const createTweetComment = asyncHandler(async (req, res) => {
 export {
   createVideoComment,
   createTweetComment,
-  deleteVidoeComment,
-  UpdateVidoeComment,
+  deleteComment,
   getVideoComments,
+  commentUpdate,
 };
