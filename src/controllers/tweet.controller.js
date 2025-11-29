@@ -128,7 +128,7 @@ const getAllActiveTweet = asyncHandler(async (req, res) => {
       $addFields: { owner: { $first: "$owners" } },
     },
     {
-      $project: { avatar: 1, username: 1 },
+      $project: { owners: 0 },
     },
   ]);
   if (activeTweet.length === 0)
@@ -160,7 +160,7 @@ const getAllPrivateTweet = asyncHandler(async (req, res) => {
       $addFields: { owner: { $first: "$owners" } },
     },
     {
-      $project: { avatar: 1, username: 1 },
+      $project: { owners: 0 },
     },
   ]);
   if (privateTweet.length === 0)
@@ -192,7 +192,7 @@ const getAllDeactiveTweet = asyncHandler(async (req, res) => {
       $addFields: { owner: { $first: "$owners" } },
     },
     {
-      $project: { avatar: 1, username: 1 },
+      $project: { owners: 0 },
     },
   ]);
   if (deactiveTweet.length === 0)

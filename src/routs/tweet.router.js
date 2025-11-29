@@ -22,7 +22,7 @@ router
 router.route("/updateTweet/:tweetId").put(verifyToken, updateTweets);
 
 router.route("/getAllTweets").get(verifyToken, getAllTweets);
-router.route("/deleteTweet/:tweetId").get(verifyToken, deleteTweet);
+router.route("/deleteTweet/:tweetId").delete(verifyToken, deleteTweet);
 router.route("/getAllActiveTweet").get(verifyToken, getAllActiveTweet);
 router.route("/getAllPrivateTweet").get(verifyToken, getAllPrivateTweet);
 router.route("/getAllDeactiveTweet").get(verifyToken, getAllDeactiveTweet);
