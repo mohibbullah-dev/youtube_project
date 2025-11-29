@@ -9,6 +9,11 @@ const tweetSchema = new Schema(
     description: {
       type: String,
     },
+    status: {
+      type: "String",
+      enum: ["active", "private", "deActive"],
+      default: "private",
+    },
     image: {
       url: {
         type: String,
