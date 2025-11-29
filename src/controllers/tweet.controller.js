@@ -31,6 +31,38 @@ const createTweet = asyncHandler(async (req, res) => {
       .json(new apiResponse(200, tweet, "tweet created successfully"));
   }
 });
+
+const updateTweets = asyncHandler(async (req, res) => {
+  const tweetId = req.params?.id;
+  const { title, description, status } = req.body;
+  const postImage = req.file?.path;
+  if (!tweetId && !postImage)
+    throw new apiError(400, "tweet && postImage is required");
+
+  if (!title) throw new apiError(400, "title is reqruired");
+
+  const cloudinaryResponse = await uploadImage(postImage);
+  if (!cloudinaryResponse) throw new (500, "cloudinary image upload faild")();
+
+  const updatePost = await Tweet.findByIdAndUpdate(
+    tweetId,
+    {
+      title,
+      description,
+      status,
+      image: {
+        url: cloudinaryResponse?.secure_url,
+        public_id: cloudinaryResponse?.public_id,
+      },
+    },
+    { new: true }
+  );
+  if (!updatePost) throw new apiError(404, "tweet not found");
+  return res
+    .status(200)
+    .json(new apiResponse(200, updatePost, "tweet updated succefully"));
+});
+
 const getAllTweets = asyncHandler(async (req, res) => {
   const Tweets = await Tweet.aggregate([
     {
@@ -313,4 +345,5 @@ export {
   getMyActiveTweets,
   getMyPrivateTweets,
   getMyDeactiveTweets,
+  updateTweets,
 };
