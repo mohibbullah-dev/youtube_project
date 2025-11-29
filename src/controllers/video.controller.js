@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { User } from "../models/user.medel.js";
 import { Video } from "../models/video.model.js";
 import { apiError } from "../utils/apiError.js";
@@ -215,6 +216,135 @@ const getAllPauseVideos = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, pauseVideos, "pauseVideos videos fetched"));
 });
 
+const getMyallvideos = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  if (!userId) throw new apiError(400, "user is required");
+  const myVideos = await Video.aggregate([
+    {
+      $match: { owner: new mongoose.Types.ObjectId(userId) },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owners",
+        pipeline: [
+          {
+            $project: { avatar: 1, username: 1 },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: { owner: { $first: "$owners" } },
+    },
+    {
+      $project: { owners: 0 },
+    },
+  ]);
+  if (myVideos.length === 0) throw new apiError(404, "vides not found");
+  return res
+    .status(200)
+    .json(new apiResponse(200, myVideos, "my all videos fetched"));
+});
+
+const getMyActiveVideos = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  if (!userId) throw new apiError(400, "user is required");
+  const myActiveVideos = await Video.aggregate([
+    {
+      $match: { owner: new mongoose.Types.ObjectId(userId), status: "active" },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owners",
+        pipeline: [
+          {
+            $project: { avatar: 1, username: 1 },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: { owner: { $first: "$owners" } },
+    },
+    {
+      $project: { owners: 0 },
+    },
+  ]);
+
+  if (myActiveVideos.length === 0) throw new apiError(404, "video not founed");
+  return res.status(200).json(200, myActiveVideos, "active videos fetched");
+});
+
+const getMypravateVideos = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  if (!userId) throw new apiError(400, "user is required");
+  const myPrivateVideos = await Video.aggregate([
+    {
+      $match: { owner: new mongoose.Types.ObjectId(userId), status: "private" },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owners",
+        pipeline: [
+          {
+            $project: { avatar: 1, username: 1 },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: { owner: { $first: "$owners" } },
+    },
+    {
+      $project: { owners: 0 },
+    },
+  ]);
+
+  if (myPrivateVideos.length === 0) throw new apiError(404, "video not founed");
+  return res.status(200).json(200, myPrivateVideos, "private videos fetched");
+});
+
+const getMyPauseVideos = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  if (!userId) throw new apiError(400, "user is required");
+  const myPauseVideos = await Video.aggregate([
+    {
+      $match: { owner: new mongoose.Types.ObjectId(userId), status: "pause" },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owners",
+        pipeline: [
+          {
+            $project: { avatar: 1, username: 1 },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: { owner: { $first: "$owners" } },
+    },
+    {
+      $project: { owners: 0 },
+    },
+  ]);
+
+  if (myPauseVideos.length === 0) throw new apiError(404, "video not founed");
+  return res.status(200).json(200, myPauseVideos, "puase videos fetched");
+});
+
 export {
   uploadYoutubeVideo,
   playVideo,
@@ -223,4 +353,8 @@ export {
   getAllActiveVideos,
   getAllPravateVideos,
   getAllPauseVideos,
+  getMyallvideos,
+  getMyActiveVideos,
+  getMypravateVideos,
+  getMyPauseVideos,
 };
