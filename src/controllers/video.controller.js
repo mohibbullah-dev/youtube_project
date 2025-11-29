@@ -17,6 +17,7 @@ const uploadYoutubeVideo = asyncHandler(async (req, res) => {
   const cloudinaryVideoThumbnailResponse = await uploadImage(
     videoThumbnaiLocalPath
   );
+
   if (
     !cloudinaryVideoResponse ||
     !cloudinaryVideoResponse.public_id ||
@@ -27,6 +28,8 @@ const uploadYoutubeVideo = asyncHandler(async (req, res) => {
 
   if (!cloudinaryVideoThumbnailResponse)
     throw new apiError(500, "cloudinaryVideoThumbnailResponse is faild");
+
+  console.log("cloudinaryVideoResponse :", cloudinaryVideoResponse);
 
   const videoSavedToDb = await Video.create({
     title: req.files?.video[0]?.originalname,
@@ -39,6 +42,7 @@ const uploadYoutubeVideo = asyncHandler(async (req, res) => {
       url: cloudinaryVideoThumbnailResponse.secure_url || "",
       public_id: cloudinaryVideoThumbnailResponse.public_id || "",
     },
+    videoDuration: cloudinaryVideoResponse?.duration,
     owner: req.user?.id,
   });
   if (!videoSavedToDb) throw new apiError(500, "failed to save to database");
