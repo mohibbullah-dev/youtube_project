@@ -86,5 +86,141 @@ const playVideo = asyncHandler(async (req, res) => {
     .status(200)
     .json(new apiResponse(200, { video, user }, "video played succfully"));
 });
+const getAllVideos = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  if (!userId) throw new apiError(400, "user is required");
+  const videos = await Video.aggregate([
+    {
+      $match: {},
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owners",
+        pipeline: [
+          {
+            $project: { avatar: 1, username: 1 },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: { owner: { $first: "$owners" } },
+    },
+    {
+      $project: { owners: 0 },
+    },
+  ]);
+  if (videos.length === 0) throw new apiError(404, "video not found");
+  return res
+    .status(200)
+    .json(new apiResponse(200, videos, "fetched all videos"));
+});
 
-export { uploadYoutubeVideo, playVideo, deleteVideo };
+const getAllActiveVideos = asyncHandler(async (req, res) => {
+  const activeVideos = await Video.aggregate([
+    {
+      $match: { status: "active" },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owners",
+        pipeline: [
+          {
+            $project: { avatar: 1, username: 1 },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: { owner: { $first: "$owners" } },
+    },
+    {
+      $project: { avatar: 1, username: 1 },
+    },
+  ]);
+  if (activeVideos.length === 0)
+    throw new apiError(404, "active videos not found");
+  return res
+    .status(200)
+    .json(new apiResponse(200, activeVideos, "active videos fetched"));
+});
+
+const getAllPravateVideos = asyncHandler(async (req, res) => {
+  const pirvateVideos = await Video.aggregate([
+    {
+      $match: { status: "private" },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owners",
+        pipeline: [
+          {
+            $project: { avatar: 1, username: 1 },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: { owner: { $first: "$owners" } },
+    },
+    {
+      $project: { owners: 0 },
+    },
+  ]);
+  if (pirvateVideos.length === 0)
+    throw new apiError(404, "private videos not found");
+  return res
+    .status(200)
+    .json(new apiResponse(200, pirvateVideos, "pirvateVideos videos fetched"));
+});
+
+const getAllPauseVideos = asyncHandler(async (req, res) => {
+  const pauseVideos = await Video.aggregate([
+    {
+      $match: { status: "pause" },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owners",
+        pipeline: [
+          {
+            $project: { avatar: 1, username: 1 },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: { owner: { $first: "$owners" } },
+    },
+    {
+      $project: { avatar: 1, username: 1 },
+    },
+  ]);
+  if (pauseVideos.length === 0)
+    throw new apiError(404, "pauseVideos videos not found");
+  return res
+    .status(200)
+    .json(new apiResponse(200, pauseVideos, "pauseVideos videos fetched"));
+});
+
+export {
+  uploadYoutubeVideo,
+  playVideo,
+  deleteVideo,
+  getAllVideos,
+  getAllActiveVideos,
+  getAllPravateVideos,
+  getAllPauseVideos,
+};

@@ -3,6 +3,10 @@ import { verifyToken } from "../middlewares/auth.middleware.js";
 import { uploadVideo } from "../middlewares/multer.middleware.js";
 import {
   deleteVideo,
+  getAllActiveVideos,
+  getAllPauseVideos,
+  getAllPravateVideos,
+  getAllVideos,
   playVideo,
   uploadYoutubeVideo,
 } from "../controllers/video.controller.js";
@@ -19,5 +23,9 @@ router.route("/upload-video").post(
 
 router.route("/palyVideo/:videoId").get(verifyToken, playVideo);
 router.route("/deleteVideo/:videoId").delete(verifyToken, deleteVideo);
+router.route("/getAllVideos").get(verifyToken, getAllVideos);
+router.route("/activeVideos").get(verifyToken, getAllActiveVideos);
+router.route("/privateVideos").get(verifyToken, getAllPravateVideos);
+router.route("/pauseVideos").get(verifyToken, getAllPauseVideos);
 
 export default router;
