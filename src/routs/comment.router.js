@@ -5,6 +5,7 @@ import {
   createTweetComment,
   createVideoComment,
   deleteComment,
+  getTweetsComment,
   getVideoComments,
   MyTweetComments,
   MyVideoComments,
@@ -23,5 +24,6 @@ router.route("/deleteComment/:CommentId").delete(verifyToken, deleteComment);
 router.route("/updateComment/:CommentId").put(verifyToken, commentUpdate);
 router.route("/getMyVideoComment").get(verifyToken, MyVideoComments);
 router.route("/getMytweetComment").get(verifyToken, MyTweetComments);
+router.route("/getTweetsComment").get(verifyToken, getTweetsComment);
 
 export default router;

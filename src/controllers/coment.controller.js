@@ -59,7 +59,8 @@ const commentUpdate = asyncHandler(async (req, res) => {
 });
 
 const getVideoComments = asyncHandler(async (req, res) => {
-  const VideoComments = await Comment.aggregate([
+  const { page, limit } = req.query;
+  const VideoComments = Comment.aggregate([
     {
       $match: { onModel: "Video" },
     },
@@ -86,20 +87,24 @@ const getVideoComments = asyncHandler(async (req, res) => {
       $project: { owners: 0 },
     },
   ]);
-  if (VideoComments.length === 0)
+
+  const result = await Comment.aggregatePaginate(VideoComments, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 20,
+  });
+  if (!result || result.docs.length === 0)
     throw new apiError(404, "videoComment not found");
 
   return res
     .status(200)
-    .json(
-      new apiResponse(200, VideoComments, "videoComments succfully fetched")
-    );
+    .json(new apiResponse(200, result, "videoComments succfully fetched"));
 });
 
 const MyVideoComments = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
+  const { page, limit } = req.query;
   if (!userId) throw new apiError(400, "user is required");
-  const VideoComment = await Comment.aggregate([
+  const VideoComment = Comment.aggregate([
     {
       $match: { owner: new mongoose.Types.ObjectId(userId), onModel: "Video" },
     },
@@ -123,15 +128,41 @@ const MyVideoComments = asyncHandler(async (req, res) => {
       $project: { users: 0 },
     },
   ]);
-  if (VideoComment.length === 0) throw new apiError(404, "comments not found");
+  const result = await Comment.aggregatePaginate(VideoComment, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 20,
+  });
+  if (!result || result.docs.length === 0)
+    throw new apiError(404, "comments not found");
   return res
     .status(200)
-    .json(new apiResponse(200, VideoComment, "fetched myVideoComments"));
+    .json(new apiResponse(200, result, "fetched myVideoComments"));
 });
+
+const getTweetsComment = asyncHandler(async (req, res) => {
+  const { page, limit } = req.query;
+  const tweetComments = Comment.aggregate([
+    {
+      $match: {},
+    },
+  ]);
+
+  const result = await Comment.aggregatePaginate(tweetComments, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 20,
+  });
+  if (!result || result.docs.length === 0)
+    throw new apiError(404, "tweetComment not found");
+  return res
+    .status(200)
+    .json(new apiResponse(200, result, "tweetComment are fetched"));
+});
+
 const MyTweetComments = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
+  const { page, limit } = req.query;
   if (!userId) throw new apiError(400, "user is required");
-  const tweetVideos = await Comment.aggregate([
+  const tweetVideos = Comment.aggregate([
     {
       $match: { owner: new mongoose.Types.ObjectId(userId), onModel: "Tweet" },
     },
@@ -158,13 +189,17 @@ const MyTweetComments = asyncHandler(async (req, res) => {
       $project: { owners: 0 },
     },
   ]);
+  const result = await Comment.aggregatePaginate(tweetVideos, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 20,
+  });
 
-  if (tweetVideos.length === 0)
+  if (!result || result.result.length === 0)
     throw new apiError(404, "tweetVideos not found");
 
   return res
     .status(200)
-    .json(new apiResponse(200, tweetVideos, "myTweetVideo fetched sucefully"));
+    .json(new apiResponse(200, result, "myTweetVideo fetched sucefully"));
 });
 
 const createTweetComment = asyncHandler(async (req, res) => {
@@ -196,4 +231,5 @@ export {
   commentUpdate,
   MyVideoComments,
   MyTweetComments,
+  getTweetsComment,
 };
