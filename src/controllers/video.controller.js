@@ -88,9 +88,10 @@ const playVideo = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, { video, user }, "video played succfully"));
 });
 const getAllVideos = asyncHandler(async (req, res) => {
-  const userId = req.user?.id;
-  if (!userId) throw new apiError(400, "user is required");
-  const videos = await Video.aggregate([
+  const { page, limit } = req.query;
+  if (!page || !limit) throw new apiError(400, "page and limit is required");
+
+  const videos = Video.aggregate([
     {
       $match: {},
     },
@@ -114,14 +115,23 @@ const getAllVideos = asyncHandler(async (req, res) => {
       $project: { owners: 0 },
     },
   ]);
-  if (videos.length === 0) throw new apiError(404, "video not found");
+
+  const result = await Video.aggregatePaginate(videos, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+
+  if (!result || result.docs.length === 0)
+    throw new apiError(404, "video not found");
+
   return res
     .status(200)
-    .json(new apiResponse(200, videos, "fetched all videos"));
+    .json(new apiResponse(200, result, "fetched all videos"));
 });
 
 const getAllActiveVideos = asyncHandler(async (req, res) => {
-  const activeVideos = await Video.aggregate([
+  const { page, limit } = req.query;
+  const activeVideos = Video.aggregate([
     {
       $match: { status: "active" },
     },
@@ -145,15 +155,20 @@ const getAllActiveVideos = asyncHandler(async (req, res) => {
       $project: { avatar: 1, username: 1 },
     },
   ]);
-  if (activeVideos.length === 0)
+  const result = await Video.aggregatePaginate(activeVideos, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+  if (!result || result.docs.length === 0)
     throw new apiError(404, "active videos not found");
   return res
     .status(200)
-    .json(new apiResponse(200, activeVideos, "active videos fetched"));
+    .json(new apiResponse(200, result, "active videos fetched"));
 });
 
 const getAllPravateVideos = asyncHandler(async (req, res) => {
-  const pirvateVideos = await Video.aggregate([
+  const { page, limit } = req.query;
+  const pirvateVideos = Video.aggregate([
     {
       $match: { status: "private" },
     },
@@ -177,15 +192,20 @@ const getAllPravateVideos = asyncHandler(async (req, res) => {
       $project: { owners: 0 },
     },
   ]);
-  if (pirvateVideos.length === 0)
+  const result = await Video.aggregatePaginate(pirvateVideos, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+  if (result.docs.length === 0)
     throw new apiError(404, "private videos not found");
   return res
     .status(200)
-    .json(new apiResponse(200, pirvateVideos, "pirvateVideos videos fetched"));
+    .json(new apiResponse(200, result, "pirvateVideos videos fetched"));
 });
 
 const getAllPauseVideos = asyncHandler(async (req, res) => {
-  const pauseVideos = await Video.aggregate([
+  const { page, limit } = req.query;
+  const pauseVideos = Video.aggregate([
     {
       $match: { status: "pause" },
     },
@@ -209,17 +229,22 @@ const getAllPauseVideos = asyncHandler(async (req, res) => {
       $project: { avatar: 1, username: 1 },
     },
   ]);
-  if (pauseVideos.length === 0)
+  const result = await Video.aggregatePaginate(pauseVideos, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+  if (result.docs.length === 0)
     throw new apiError(404, "pauseVideos videos not found");
   return res
     .status(200)
-    .json(new apiResponse(200, pauseVideos, "pauseVideos videos fetched"));
+    .json(new apiResponse(200, result, "pauseVideos videos fetched"));
 });
 
 const getMyallvideos = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
+  const { page, limit } = req.query;
   if (!userId) throw new apiError(400, "user is required");
-  const myVideos = await Video.aggregate([
+  const myVideos = Video.aggregate([
     {
       $match: { owner: new mongoose.Types.ObjectId(userId) },
     },
@@ -243,16 +268,21 @@ const getMyallvideos = asyncHandler(async (req, res) => {
       $project: { owners: 0 },
     },
   ]);
-  if (myVideos.length === 0) throw new apiError(404, "vides not found");
+  const result = await Video.aggregatePaginate(myVideos, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+  if (result.docs.length === 0) throw new apiError(404, "vides not found");
   return res
     .status(200)
-    .json(new apiResponse(200, myVideos, "my all videos fetched"));
+    .json(new apiResponse(200, result, "my all videos fetched"));
 });
 
 const getMyActiveVideos = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
+  const { page, limit } = req.query;
   if (!userId) throw new apiError(400, "user is required");
-  const myActiveVideos = await Video.aggregate([
+  const myActiveVideos = Video.aggregate([
     {
       $match: { owner: new mongoose.Types.ObjectId(userId), status: "active" },
     },
@@ -276,15 +306,20 @@ const getMyActiveVideos = asyncHandler(async (req, res) => {
       $project: { owners: 0 },
     },
   ]);
+  const result = await Video.aggregatePaginate(myActiveVideos, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
 
-  if (myActiveVideos.length === 0) throw new apiError(404, "video not founed");
-  return res.status(200).json(200, myActiveVideos, "active videos fetched");
+  if (result.docs.length === 0) throw new apiError(404, "video not founed");
+  return res.status(200).json(200, result, "active videos fetched");
 });
 
 const getMypravateVideos = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
+  const { page, limit } = req.query;
   if (!userId) throw new apiError(400, "user is required");
-  const myPrivateVideos = await Video.aggregate([
+  const myPrivateVideos = Video.aggregate([
     {
       $match: { owner: new mongoose.Types.ObjectId(userId), status: "private" },
     },
@@ -309,14 +344,20 @@ const getMypravateVideos = asyncHandler(async (req, res) => {
     },
   ]);
 
-  if (myPrivateVideos.length === 0) throw new apiError(404, "video not founed");
-  return res.status(200).json(200, myPrivateVideos, "private videos fetched");
+  const result = await Video.aggregatePaginate(myPrivateVideos, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+
+  if (result.docs.length === 0) throw new apiError(404, "video not founed");
+  return res.status(200).json(200, result, "private videos fetched");
 });
 
 const getMyPauseVideos = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
+  const { page, limit } = req.query;
   if (!userId) throw new apiError(400, "user is required");
-  const myPauseVideos = await Video.aggregate([
+  const myPauseVideos = Video.aggregate([
     {
       $match: { owner: new mongoose.Types.ObjectId(userId), status: "pause" },
     },
@@ -341,8 +382,13 @@ const getMyPauseVideos = asyncHandler(async (req, res) => {
     },
   ]);
 
-  if (myPauseVideos.length === 0) throw new apiError(404, "video not founed");
-  return res.status(200).json(200, myPauseVideos, "puase videos fetched");
+  const result = await Video.aggregatePaginate(myPauseVideos, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+
+  if (result.docs.length === 0) throw new apiError(404, "video not founed");
+  return res.status(200).json(200, result, "puase videos fetched");
 });
 
 export {
