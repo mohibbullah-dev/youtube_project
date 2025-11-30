@@ -26,6 +26,45 @@ const videoPlaylistCreate = asyncHandler(async (req, res) => {
     .status(201)
     .json(new apiResponse(200, videoList, "videoPlaysist created succefully"));
 });
+const getAllPlaylist = asyncHandler(async (req, res) => {
+  const { page, limit } = req.query;
+
+  const allPlaylists = VideoPlaylist.aggregate([
+    {
+      $match: {},
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owners",
+        pipeline: [
+          {
+            $project: { avatar: 1, username: 1 },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: { owner: { $first: "$owners" } },
+    },
+    {
+      $project: { owners: 0 },
+    },
+  ]);
+  const result = await VideoPlaylist.aggregatePaginate(allPlaylists, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+
+  if (!result || result.docs.length === 0)
+    throw new apiError(404, "videoList not found");
+
+  return res
+    .status(200)
+    .json(new apiResponse(200, result, "allPlaylist fetched"));
+});
 
 const videoUploadToPlaylist = asyncHandler(async (req, res) => {
   const { playListId, videoId } = req.params;
@@ -111,4 +150,5 @@ export {
   getVideoPlaylist,
   videoUploadToPlaylist,
   deleteVideoPlaylist,
+  getAllPlaylist,
 };
