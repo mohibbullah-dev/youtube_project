@@ -289,6 +289,18 @@ const forgetPassword = asyncHandler(async (req, res) => {
   return res.status(200).json(new apiResponse(200, "otp sent"));
 });
 
+const getAllUsers = asyncHandler(async (req, res) => {
+  const { page, limit } = req.query;
+  const allUsers = User.aggregate([{ $match: {} }]);
+  const result = await User.aggregatePaginate(allUsers, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+  if (!result || result.docs.length === 0)
+    throw new apiError(404, "user not found");
+  return res.status(200).json(new apiResponse(200, result, "all user fetched"));
+});
+
 const verifyOtp = asyncHandler(async (req, res) => {
   const { otp } = req.body;
   const user = await User.findOne({ resetPassOtp: otp });
@@ -504,9 +516,11 @@ const getWatchHistory = asyncHandler(async (req, res) => {
   // write a $addFields pipeline to overried owner with first value of array
   // finally extract the obejct from main pipeline array because pipeline always reture a array & return respons
 
-  const user = await User.aggregate([
+  const userId = req.user?.id;
+  const { page, limit } = req.query;
+  const user = User.aggregate([
     {
-      $match: { _id: new mongoose.Types.ObjectId(req.user.id) },
+      $match: { _id: new mongoose.Types.ObjectId(userId) },
     },
     {
       $lookup: {
@@ -538,14 +552,17 @@ const getWatchHistory = asyncHandler(async (req, res) => {
       $project: { username: 1, watchHistory: 1, avatar: 1 },
     },
   ]);
+  const result = await User.aggregatePaginate(user, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
 
-  if (!user) throw new Error(400, "user not found");
-
-  console.log("user: ", user);
+  if (!result || result.docs.length === 0)
+    throw new Error(404, "user not found");
 
   return res
     .status(200)
-    .json(new apiResponse(200, user, "fetched watchHistory succefully"));
+    .json(new apiResponse(200, result, "fetched watchHistory succefully"));
 });
 
 export {
@@ -564,4 +581,5 @@ export {
   verifyOtp,
   resetPasswrod,
   verifyEmail,
+  getAllUsers,
 };

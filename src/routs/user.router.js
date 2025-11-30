@@ -5,6 +5,7 @@ import {
   changeProfile,
   forgetPassword,
   generateNewAccessToken,
+  getAllUsers,
   getChannelProfile,
   getCurrentUser,
   getWatchHistory,
@@ -34,6 +35,7 @@ router.route("/logout").delete(verifyToken, loguotUser);
 router.route("/renewAccessToken").get(generateNewAccessToken);
 router.route("/changePassword").put(verifyToken, changePassword);
 router.route("/userDetailsUpdate").put(verifyToken, updateUserDetails);
+router.route("/getAllUsers").get(verifyToken, getAllUsers);
 router.route("/me").get(verifyToken, getCurrentUser);
 router
   .route("/changeAvatar")
