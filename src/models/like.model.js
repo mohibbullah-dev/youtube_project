@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 const likeSchema = new Schema({
   owner: {
     type: Schema.Types.ObjectId,
@@ -17,4 +17,6 @@ const likeSchema = new Schema({
     required: true,
   },
 });
+
+likeSchema.plugin(mongooseAggregatePaginate);
 export const LiKe = mongoose.model("LiKe", likeSchema);
