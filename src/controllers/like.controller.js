@@ -20,9 +20,10 @@ const createVideoLike = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, like, "like created succefully"));
 });
 const MyvideoLikes = asyncHandler(async (req, res) => {
+  const { page, limit } = req.query;
   const userId = req.user?.id;
   if (!userId) throw new apiError(400, "user is required");
-  const videoLikes = await LiKe.aggregate([
+  const videoLikes = LiKe.aggregate([
     {
       $match: { owner: new mongoose.Types.ObjectId(userId), modelOn: "Video" },
     },
@@ -46,10 +47,17 @@ const MyvideoLikes = asyncHandler(async (req, res) => {
       $project: { owners: 0 },
     },
   ]);
-  if (videoLikes.length === 0) throw new apiError(404, "videlLike not found");
+
+  const result = await LiKe.aggregatePaginate(videoLikes, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 20,
+  });
+
+  if (!result || result.docs.length === 0)
+    throw new apiError(404, "videlLike not found");
   return res
     .status(200)
-    .json(new apiResponse(200, videoLikes, "videoLike are fetched"));
+    .json(new apiResponse(200, result, "videoLike are fetched"));
 });
 
 const createTweetLike = asyncHandler(async (req, res) => {
@@ -72,8 +80,9 @@ const createTweetLike = asyncHandler(async (req, res) => {
 
 const MyTweetLikes = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
+  const { page, limit } = req.query;
   if (!userId) throw new apiError(400, "user is required");
-  const tweetLikes = await LiKe.aggregate([
+  const tweetLikes = LiKe.aggregate([
     {
       $match: { owner: new mongoose.Types.ObjectId(userId), modelOn: "Tweet" },
     },
@@ -97,10 +106,15 @@ const MyTweetLikes = asyncHandler(async (req, res) => {
       $project: { owners: 0 },
     },
   ]);
-  if (tweetLikes.length === 0) throw new apiError(404, "tweetLikes not found");
+  const result = await LiKe.aggregatePaginate(tweetLikes, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 20,
+  });
+  if (!result || result.docs.length === 0)
+    throw new apiError(404, "tweetLikes not found");
   return res
     .status(200)
-    .json(new apiResponse(200, tweetLikes, "tweetLikes are fetched"));
+    .json(new apiResponse(200, result, "tweetLikes are fetched"));
 });
 
 const creatdCommentLike = asyncHandler(async (req, res) => {
@@ -122,8 +136,10 @@ const creatdCommentLike = asyncHandler(async (req, res) => {
 });
 const MyCommentLikes = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
+  const { page, limit } = req.query;
   if (!userId) throw new apiError(400, "user is required");
-  const commentLikes = await LiKe.aggregate([
+
+  const commentLikes = LiKe.aggregate([
     {
       $match: {
         owner: new mongoose.Types.ObjectId(userId),
@@ -150,17 +166,25 @@ const MyCommentLikes = asyncHandler(async (req, res) => {
       $project: { owners: 0 },
     },
   ]);
-  if (commentLikes.length === 0)
+
+  const result = await LiKe.aggregatePaginate(commentLikes, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 20,
+  });
+
+  if (!result || result.docs.length === 0)
     throw new apiError(404, "commentLikes not found");
   return res
     .status(200)
-    .json(new apiResponse(200, commentLikes, "commentLikes are fetched"));
+    .json(new apiResponse(200, result, "commentLikes are fetched"));
 });
 
 const getAllLikes = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
+  const { page, limit } = req.query;
+
   if (!userId) throw new apiError(400, "user is required");
-  const likes = await LiKe.aggregate([
+  const likes = LiKe.aggregate([
     {
       $match: { owner: new mongoose.Types.ObjectId(userId) },
     },
@@ -184,9 +208,17 @@ const getAllLikes = asyncHandler(async (req, res) => {
       $project: { owners: 0 },
     },
   ]);
-  if (likes.length === 0) throw new apiError(404, "likes not found");
+  const result = await LiKe.aggregatePaginate(likes, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 20,
+  });
 
-  return res.status(200).json(new apiResponse(200, likes, "all likes fetched"));
+  if (!result || result.docs.length === 0)
+    throw new apiError(404, "likes not found");
+
+  return res
+    .status(200)
+    .json(new apiResponse(200, result, "all likes fetched"));
 });
 
 const deleteLike = asyncHandler(async (req, res) => {
