@@ -1,4 +1,5 @@
 import { Tweet } from "../models/tweet.model.js";
+import { User } from "../models/user.medel.js";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -64,7 +65,9 @@ const updateTweets = asyncHandler(async (req, res) => {
 });
 
 const getAllTweets = asyncHandler(async (req, res) => {
-  const Tweets = await Tweet.aggregate([
+  const { page, limit } = req.query;
+
+  const Tweets = Tweet.aggregate([
     {
       $match: {},
     },
@@ -88,10 +91,15 @@ const getAllTweets = asyncHandler(async (req, res) => {
       $project: { owners: 0 },
     },
   ]);
-  if (Tweets.length === 0) throw new apiError(404, "tweet not found");
+  const result = await Tweet.aggregatePaginate(Tweets, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+  if (!result || result.docs.length === 0)
+    throw new apiError(404, "tweet not found");
   return res
     .status(200)
-    .json(new apiResponse(200, Tweets, "fetched all tweets"));
+    .json(new apiResponse(200, result, "fetched all tweets"));
 });
 
 const deleteTweet = asyncHandler(async (req, res) => {
@@ -107,7 +115,8 @@ const deleteTweet = asyncHandler(async (req, res) => {
 });
 
 const getAllActiveTweet = asyncHandler(async (req, res) => {
-  const activeTweet = await Tweet.aggregate([
+  const { page, limit } = req.query;
+  const activeTweet = Tweet.aggregate([
     {
       $match: { status: "active" },
     },
@@ -131,15 +140,22 @@ const getAllActiveTweet = asyncHandler(async (req, res) => {
       $project: { owners: 0 },
     },
   ]);
-  if (activeTweet.length === 0)
+
+  const result = await Tweet.aggregatePaginate(activeTweet, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+
+  if (!result || result.docs.length === 0)
     throw new apiError(404, "active tweet not found");
   return res
     .status(200)
-    .json(new apiResponse(200, activeTweet, "active tweet fetched"));
+    .json(new apiResponse(200, result, "active tweet fetched"));
 });
 
 const getAllPrivateTweet = asyncHandler(async (req, res) => {
-  const privateTweet = await Tweet.aggregate([
+  const { page, limit } = req.query;
+  const privateTweet = Tweet.aggregate([
     {
       $match: { status: "private" },
     },
@@ -163,15 +179,20 @@ const getAllPrivateTweet = asyncHandler(async (req, res) => {
       $project: { owners: 0 },
     },
   ]);
-  if (privateTweet.length === 0)
+  const result = await Tweet.aggregatePaginate(privateTweet, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+  if (!result || result.docs.length === 0)
     throw new apiError(404, "private tweet not found");
   return res
     .status(200)
-    .json(new apiResponse(200, privateTweet, "private tweet fetched"));
+    .json(new apiResponse(200, result, "private tweet fetched"));
 });
 
 const getAllDeactiveTweet = asyncHandler(async (req, res) => {
-  const deactiveTweet = await Tweet.aggregate([
+  const { page, limit } = req.query;
+  const deactiveTweet = Tweet.aggregate([
     {
       $match: { status: "deActive" },
     },
@@ -195,17 +216,24 @@ const getAllDeactiveTweet = asyncHandler(async (req, res) => {
       $project: { owners: 0 },
     },
   ]);
-  if (deactiveTweet.length === 0)
+
+  const result = await Tweet.aggregatePaginate(deactiveTweet, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+  if (!result || result.docs.length === 0)
     throw new apiError(404, "deactive tweet not found");
   return res
     .status(200)
-    .json(new apiResponse(200, deactiveTweet, "deactive tweet fetched"));
+    .json(new apiResponse(200, result, "deactive tweet fetched"));
 });
 
 const getMyalltweets = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
+  const { page, limit } = req.query;
+
   if (!userId) throw new apiError(400, "user is required");
-  const myTweets = await Tweet.aggregate([
+  const myTweets = Tweet.aggregate([
     {
       $match: { owner: new mongoose.Types.ObjectId(userId) },
     },
@@ -229,16 +257,22 @@ const getMyalltweets = asyncHandler(async (req, res) => {
       $project: { owners: 0 },
     },
   ]);
-  if (myTweets.length === 0) throw new apiError(404, "tweet not found");
+  const result = await Tweet.aggregatePaginate(myTweets, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+  if (!result || result.docs.length === 0)
+    throw new apiError(404, "tweet not found");
   return res
     .status(200)
-    .json(new apiResponse(200, myTweets, "my all tweets fetched"));
+    .json(new apiResponse(200, result, "my all tweets fetched"));
 });
 
 const getMyActiveTweets = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
+  const { page, limit } = req.query;
   if (!userId) throw new apiError(400, "user is required");
-  const myActiveTweet = await Tweet.aggregate([
+  const myActiveTweet = Tweet.aggregate([
     {
       $match: { owner: new mongoose.Types.ObjectId(userId), status: "active" },
     },
@@ -263,14 +297,21 @@ const getMyActiveTweets = asyncHandler(async (req, res) => {
     },
   ]);
 
-  if (myActiveTweet.length === 0) throw new apiError(404, "tweet not founed");
-  return res.status(200).json(200, myActiveTweet, "active tweet fetched");
+  const result = await Tweet.aggregatePaginate(myActiveTweet, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+
+  if (!result || result.docs.length === 0)
+    throw new apiError(404, "tweet not founed");
+  return res.status(200).json(200, result, "active tweet fetched");
 });
 
 const getMyPrivateTweets = asyncHandler(async (req, res) => {
+  const { page, limit } = req.query;
   const userId = req.user?.id;
   if (!userId) throw new apiError(400, "user is required");
-  const myPrivateTweet = await Tweet.aggregate([
+  const myPrivateTweet = Tweet.aggregate([
     {
       $match: { owner: new mongoose.Types.ObjectId(userId), status: "private" },
     },
@@ -295,14 +336,22 @@ const getMyPrivateTweets = asyncHandler(async (req, res) => {
     },
   ]);
 
-  if (myPrivateTweet.length === 0) throw new apiError(404, "tweet not founed");
-  return res.status(200).json(200, myPrivateTweet, "private tweet fetched");
+  const result = await Tweet.aggregatePaginate(myPrivateTweet, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+
+  if (!result || result.docs.length === 0)
+    throw new apiError(404, "tweet not founed");
+  return res.status(200).json(200, result, "private tweet fetched");
 });
 
 const getMyDeactiveTweets = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
+  const { page, limit } = req.query;
   if (!userId) throw new apiError(400, "user is required");
-  const myDeactiveTweet = await Tweet.aggregate([
+
+  const myDeactiveTweet = Tweet.aggregate([
     {
       $match: {
         owner: new mongoose.Types.ObjectId(userId),
@@ -330,8 +379,14 @@ const getMyDeactiveTweets = asyncHandler(async (req, res) => {
     },
   ]);
 
-  if (myDeactiveTweet.length === 0) throw new apiError(404, "tweet not founed");
-  return res.status(200).json(200, myDeactiveTweet, "deactive tweet fetched");
+  const result = await Tweet.aggregatePaginate(myDeactiveTweet, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+
+  if (!result || result.docs.length === 0)
+    throw new apiError(404, "tweet not founed");
+  return res.status(200).json(200, result, "deactive tweet fetched");
 });
 
 export {
