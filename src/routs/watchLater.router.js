@@ -11,7 +11,7 @@ const router = Router();
 
 router.route("/createWatchLater/:videoId").post(verifyToken, createWatchLater);
 router
-  .route("/getSingleLaterWatchLater/:videoId")
+  .route("/getSingleLaterWatchLater/:watchLaterId")
   .get(verifyToken, getSingleWatchLaterVideos);
 router.route("/getAllMyWatchLater").get(verifyToken, getAllMyWatchLater);
 router

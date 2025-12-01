@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { WatchLater } from "../models/watchLater.model.js";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
@@ -25,12 +26,13 @@ const createWatchLater = asyncHandler(async (req, res) => {
 
 const getSingleWatchLaterVideos = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
-  const videoId = req.params?.videoId;
-  if (!userId || !videoId) throw new apiError(400, "user & video are required");
+  const watchLaterId = req.params?.watchLaterId;
+  if (!userId || !watchLaterId)
+    throw new apiError(400, "user & video are required");
 
   const watchlater = await WatchLater.findOne({
     owner: userId,
-    videoId,
+    _id: watchLaterId,
   }).populate({
     path: "videoId",
     select: "title description video owner status views",
@@ -49,7 +51,7 @@ const getAllMyWatchLater = asyncHandler(async (req, res) => {
   if (!userId) throw new apiError(400, "user is requried");
   const wathLaters = WatchLater.aggregate([
     {
-      $match: { owner: userId },
+      $match: { owner: new mongoose.Types.ObjectId(userId) },
     },
     {
       $lookup: {
