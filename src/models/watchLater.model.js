@@ -18,4 +18,4 @@ const watchLaterSchema = new Schema(
 
 watchLaterSchema.plugin(mongooseAggregatePaginate);
 
-const WatchLater = mongoose.model("WatchLater", watchLaterSchema);
+export const WatchLater = mongoose.model("WatchLater", watchLaterSchema);
