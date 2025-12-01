@@ -9,7 +9,7 @@ import { verifyToken } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.route("/createWatchLater").post(verifyToken, createWatchLater);
+router.route("/createWatchLater/:videoId").post(verifyToken, createWatchLater);
 router
   .route("/getSingleLaterWatchLater/:videoId")
   .get(verifyToken, getSingleWatchLaterVideos);
