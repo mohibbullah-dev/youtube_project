@@ -57,7 +57,7 @@ const getAllMyWatchLater = asyncHandler(async (req, res) => {
       $lookup: {
         from: "videos",
         localField: "videoId",
-        foreignField: "owner",
+        foreignField: "_id",
         as: "videos",
         pipeline: [
           {
