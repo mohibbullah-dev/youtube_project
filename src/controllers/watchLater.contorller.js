@@ -23,21 +23,39 @@ const createWatchLater = asyncHandler(async (req, res) => {
     .json(new apiResponse(201, watchLater, "created watchLater"));
 });
 
-const getWatchLaterVideos = asyncHandler(async (req, res) => {
+const getSingleWatchLaterVideos = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
-  const { page, limit } = req.query;
   const videoId = req.params?.videoId;
   if (!userId || !videoId) throw new apiError(400, "user & video are required");
 
-  const videos = WatchLater.aggregate([
+  const watchlater = await WatchLater.findOne({
+    owner: userId,
+    videoId,
+  }).populate({
+    path: "videoId",
+    select: "title description video owner status views",
+    populate: { path: "owner", select: "avatar username" },
+  });
+  if (!watchlater) throw new apiError(404, "watchLate not found");
+
+  return res
+    .status(200)
+    .json(new apiResponse(200, watchlater, "watchLater fetched"));
+});
+
+const getAllMyWatchLater = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  const { page, limit } = req.query;
+  if (!userId) throw new apiError(400, "user is requried");
+  const wathLaters = WatchLater.aggregate([
     {
-      $match: { owner: userId, videoId: videoId },
+      $match: { owner: userId },
     },
     {
       $lookup: {
         from: "videos",
         localField: "videoId",
-        foreignField: "_id",
+        foreignField: "owner",
         as: "videos",
         pipeline: [
           {
@@ -60,14 +78,13 @@ const getWatchLaterVideos = asyncHandler(async (req, res) => {
       },
     },
   ]);
-  const result = await WatchLater.aggregatePaginate(videos, {
+  const result = await WatchLater.aggregatePaginate(wathLaters, {
     page: Number(page) || 1,
     limit: Number(limit) || 10,
   });
 
   if (!result || result.docs.length === 0)
-    throw new apiError(404, "watchLater not found");
-
+    throw new (404, "wathcLate not found")();
   return res
     .status(200)
     .json(new apiResponse(200, result, "watchLater fetched"));
@@ -84,4 +101,9 @@ const deletePlaylist = asyncHandler(async (req, res) => {
     .json(new apiResponse(202, deleteWatchLater, "watchLater deleted"));
 });
 
-export { createWatchLater, getWatchLaterVideos, deletePlaylist };
+export {
+  createWatchLater,
+  getSingleWatchLaterVideos,
+  getAllMyWatchLater,
+  deletePlaylist,
+};
