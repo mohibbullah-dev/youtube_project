@@ -73,4 +73,15 @@ const getWatchLaterVideos = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, result, "watchLater fetched"));
 });
 
-export { createWatchLater, getWatchLaterVideos };
+const deletePlaylist = asyncHandler(async (req, res) => {
+  const watchLaterId = req.params?.watchLaterId;
+  if (!watchLaterId) throw new apiError(400, "watchLater is required");
+  const deleteWatchLater = await WatchLater.findById(watchLaterId);
+  if (!deleteWatchLater) throw new apiError(404, "watchlater not found");
+
+  return res
+    .status(204)
+    .json(new apiResponse(202, deleteWatchLater, "watchLater deleted"));
+});
+
+export { createWatchLater, getWatchLaterVideos, deletePlaylist };
