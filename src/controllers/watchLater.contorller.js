@@ -95,12 +95,12 @@ const getAllMyWatchLater = asyncHandler(async (req, res) => {
 const deleteWatchLater = asyncHandler(async (req, res) => {
   const watchLaterId = req.params?.watchLaterId;
   if (!watchLaterId) throw new apiError(400, "watchLater is required");
-  const deleteWatchLater = await WatchLater.findById(watchLaterId);
+  const deleteWatchLater = await WatchLater.findByIdAndDelete(watchLaterId);
   if (!deleteWatchLater) throw new apiError(404, "watchlater not found");
 
   return res
-    .status(204)
-    .json(new apiResponse(202, deleteWatchLater, "watchLater deleted"));
+    .status(200)
+    .json(new apiResponse(204, deleteWatchLater, "watchLater deleted"));
 });
 
 export {
