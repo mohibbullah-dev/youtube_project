@@ -9,14 +9,17 @@ const commentSchema = new Schema(
     commentOn: {
       type: Schema.Types.ObjectId,
       refPath: "onModel",
+      required: true,
     },
     onModel: {
       type: String,
       enum: ["Video", "Tweet"],
+      required: true,
     },
     owner: {
       type: Schema.Types.ObjectId,
       ref: "User",
+      required: true,
     },
   },
   { timestamps: true }
