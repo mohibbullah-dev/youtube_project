@@ -1,6 +1,5 @@
 import { Notification } from "../models/notification.model.js";
 import { apiError } from "./apiError.js";
-import asyncHandler from "./asyncHandler.js";
 
 const sendNotification = async (
   acotr = "",

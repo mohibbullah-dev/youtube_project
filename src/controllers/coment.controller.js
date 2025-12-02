@@ -3,8 +3,8 @@ import { Comment } from "../models/comment.mode.js";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import { Notification } from "../models/notification.model.js";
 import { Video } from "../models/video.model.js";
+import { sendNotification } from "../utils/notificatin.js";
 
 const createVideoComment = asyncHandler(async (req, res) => {
   // take the videos from  req.body
@@ -34,13 +34,21 @@ const createVideoComment = asyncHandler(async (req, res) => {
     throw new apiError(500, "something went wrong while creating comment");
 
   // send notificatin to video owner
-  await Notification.create({
-    actor: userId,
-    receiver: video.owner,
-    type: "NEW_VIDEO_COMMENT",
-    entityId: comment._id,
-    message: "someone comment on your video",
-  });
+  // await Notification.create({
+  //   actor: userId,
+  //   receiver: video.owner,
+  //   type: "NEW_VIDEO_COMMENT",
+  //   entityId: comment._id,
+  //   message: "someone comment on your video",
+  // });
+
+  await sendNotification(
+    userId,
+    video.owner,
+    "NEW_VIDEO_COMMENT",
+    comment._id,
+    "someone comment on your video"
+  );
 
   return res
     .status(201)
