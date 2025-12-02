@@ -37,7 +37,7 @@ const createVideoComment = asyncHandler(async (req, res) => {
   await Notification.create({
     actor: userId,
     receiver: video.owner,
-    type: "NEW_COMMENT",
+    type: "NEW_VIDEO_COMMENT",
     entityId: comment._id,
     message: "someone comment on your video",
   });
