@@ -2,7 +2,7 @@ import { Notification } from "../models/notification.model.js";
 import { apiError } from "./apiError.js";
 
 const sendNotification = async (
-  acotr = "",
+  actor = "",
   receiver = "",
   type = "",
   entityId = "",
@@ -10,14 +10,14 @@ const sendNotification = async (
 ) => {
   try {
     await Notification.create({
-      acotr,
-      receiver,
-      type,
-      entityId,
-      message,
+      actor: actor,
+      receiver: receiver,
+      type: type,
+      entityId: entityId,
+      message: message,
     });
   } catch (error) {
-    throw new apiError(500, "notification sending faild");
+    throw new apiError(500, "notification sending failed");
   }
 };
 
