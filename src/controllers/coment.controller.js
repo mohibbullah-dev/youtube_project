@@ -5,6 +5,7 @@ import { apiResponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { Video } from "../models/video.model.js";
 import { sendNotification } from "../utils/notificatin.js";
+import { Tweet } from "../models/tweet.model.js";
 
 const createVideoComment = asyncHandler(async (req, res) => {
   // take the videos from  req.body
@@ -12,7 +13,6 @@ const createVideoComment = asyncHandler(async (req, res) => {
   // check them empty or not
   // create comment to db
   //  finally retunr response to client
-
   const userId = req.user?.id;
   const videoId = req.params?.videoId;
   const { content } = req.body;
@@ -43,11 +43,11 @@ const createVideoComment = asyncHandler(async (req, res) => {
   // });
 
   await sendNotification(
-    userId,
-    video.owner,
-    "NEW_VIDEO_COMMENT",
-    comment._id,
-    "someone comment on your video"
+    userId, // actor
+    video.owner, // receiver
+    "NEW_VIDEO_COMMENT", // type
+    comment._id, // entityId
+    "someone comment on your video" // message
   );
 
   return res
@@ -56,15 +56,50 @@ const createVideoComment = asyncHandler(async (req, res) => {
 });
 
 const deleteComment = asyncHandler(async (req, res) => {
-  const CommentId = req.params.CommentId;
-  if (!CommentId) throw new apiError(400, "clientomment is required");
+  const commentId = req.params?.CommentId;
+  const userId = req.user?.id;
+  if (!commentId || !userId)
+    throw new apiError(400, "comment & user are required");
 
-  const deletevideo = await Comment.findByIdAndDelete(CommentId);
-  console.log("deletevideo :", deletevideo);
+  const comment = await Comment.findById(commentId);
+
+  if (!comment) throw new apiError(404, "comment not found");
+  let receiverId = null;
+  let type = null;
+  let message = null;
+
+  if (comment.onModel === "Video") {
+    const video = await Video.findById(comment.commentOn);
+    if (video) {
+      receiverId = video.owner;
+      type = "VIDEO_COMMENT_DELELTE";
+      message = "the video comment deleted";
+    } else {
+      throw new apiError(404, "video not found");
+    }
+  }
+
+  if (comment.onModel === "Tweet") {
+    const tweet = await Tweet.findById(comment.commentOn);
+    console.log("tweet :", tweet);
+    if (tweet) {
+      receiverId = tweet.owner;
+      type = "TWEET_COMMENT_DELELTE";
+      message = "the tweet is deleted";
+    } else {
+      throw new apiError(404, "tweet not found");
+    }
+  }
+
+  const commentDelte = await Comment.findByIdAndDelete(commentId);
+
+  if (receiverId && type) {
+    await sendNotification(userId, receiverId, type, commentDelte._id, message);
+  }
 
   return res
     .status(200)
-    .json(new apiResponse(200, "deleted comment succefully"));
+    .json(new apiResponse(200, commentDelte, "deleted comment succefully"));
 });
 
 const commentUpdate = asyncHandler(async (req, res) => {
@@ -231,7 +266,7 @@ const createTweetComment = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
   const tweetId = req.params?.tweetId;
   const { content } = req.body;
-  if (!userId && !tweetId && !content)
+  if (!userId || !tweetId || !content)
     throw new apiError(400, "userId, tweetId and content are required");
 
   const comment = await Comment.create({
