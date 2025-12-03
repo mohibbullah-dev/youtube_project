@@ -59,10 +59,12 @@ const deleteComment = asyncHandler(async (req, res) => {
   const CommentId = req.params.CommentId;
   if (!CommentId) throw new apiError(400, "clientomment is required");
 
-  await Comment.findByIdAndDelete(CommentId);
+  const deletevideo = await Comment.findByIdAndDelete(CommentId);
+  console.log("deletevideo :", deletevideo);
+
   return res
-    .status(204)
-    .json(new apiResponse(204, "deleted comment succefully"));
+    .status(200)
+    .json(new apiResponse(200, "deleted comment succefully"));
 });
 
 const commentUpdate = asyncHandler(async (req, res) => {
