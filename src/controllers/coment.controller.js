@@ -104,15 +104,50 @@ const deleteComment = asyncHandler(async (req, res) => {
 
 const commentUpdate = asyncHandler(async (req, res) => {
   const { content } = req.body;
-  const CommentId = req.params.CommentId;
-  if (!CommentId && !content)
-    throw new apiError(400, "comment & content are required");
+  const commentId = req.params.CommentId;
+  const userId = req.user?.id;
+  if (!commentId || !content || !userId)
+    throw new apiError(400, "comment & content and user are required");
+  const comment = await Comment.findById(commentId);
+  if (!comment) throw new apiError(404, "comment not found");
+  let receiverId = null;
+  let type = null;
+  let message = null;
+
+  if (comment.onModel === "Video") {
+    const video = await Video.findById(comment.commentOn);
+    if (video) {
+      receiverId = video.owner;
+      type = "VIDEO_COMMENT_UPDATE";
+      message = "the video comment updated";
+    }
+  }
+
+  if (comment.onModel === "Tweet") {
+    const tweet = await Tweet.findById(comment.commentOn);
+    if (tweet) {
+      receiverId = tweet.owner;
+      type = "TWEET_COMMENT_UPDATE";
+      message = "the tweet comment update";
+    }
+  }
+
   const updateComment = await Comment.findByIdAndUpdate(
-    CommentId,
+    commentId,
     { content },
     { new: true }
   );
   if (!updateComment) throw new apiError(404, "videoComment not found");
+
+  if (receiverId && type) {
+    await sendNotification(
+      userId,
+      receiverId,
+      type,
+      updateComment._id,
+      message
+    );
+  }
   return res
     .status(200)
     .json(new apiResponse(200, updateComment, "comment updated succefully"));
