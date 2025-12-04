@@ -2,6 +2,7 @@ import { Subscription } from "../models/subscription.model.js";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { sendNotification } from "../utils/notificatin.js";
 
 const subcribToChannel = asyncHandler(async (req, res) => {
   // take the logedin-user from req.user.id who want to subscribe
@@ -16,31 +17,33 @@ const subcribToChannel = asyncHandler(async (req, res) => {
   const channelId = req.params?.channelId;
 
   if (!subscriberid || !channelId)
-    throw new apiError(400, "subscriber & channel is required");
+    throw new apiError(400, "subscriber & channel are required");
   if (subscriberid === channelId)
-    throw new apiError(400, "canner be subscribed in own channel");
+    throw new apiError(400, "cannot be subscribed in own channel");
 
-  try {
-    const exists = await Subscription.findOne({
-      subscriber: subscriberid,
-      channel: channelId,
-    });
+  const exists = await Subscription.findOne({
+    subscriber: subscriberid,
+    channel: channelId,
+  });
 
-    if (exists) throw new apiError(400, "already subcribed");
-
+  if (!exists) {
     const subcribed = await Subscription.create({
       subscriber: subscriberid,
       channel: channelId,
     });
-
     if (!subcribed)
-      throw new apiError(500, "something went wrong while subcriber creation");
+      throw new apiError(500, "something went wrong while subcribing");
 
+    await sendNotification(
+      subscriberid,
+      channelId,
+      "NEW_SUBSCRIBER",
+      subcribed._id,
+      "someone subscribed your channel"
+    );
     return res
       .status(201)
       .json(new apiResponse(200, subcribed, "subscribed succefully"));
-  } catch (error) {
-    throw new apiError(500, error.message);
   }
 });
 
@@ -61,6 +64,14 @@ const unsubscribeToChannel = asyncHandler(async (req, res) => {
     channel: channelId,
   });
   if (!unsubscribe) throw new apiError(404, "subscriber not found");
+
+  await sendNotification(
+    subscriberId,
+    channelId,
+    "UNSUBSCRIBED",
+    unsubscribe._id,
+    "someone unsubscribed you"
+  );
 
   return res
     .status(204)
