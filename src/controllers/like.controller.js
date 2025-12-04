@@ -6,6 +6,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { sendNotification } from "../utils/notificatin.js";
 import { Video } from "../models/video.model.js";
 import { Tweet } from "../models/tweet.model.js";
+import { Comment } from "../models/comment.mode.js";
 
 const createVideoLike = asyncHandler(async (req, res) => {
   const userId = req.user?.id;
@@ -21,7 +22,6 @@ const createVideoLike = asyncHandler(async (req, res) => {
     owner: userId,
   });
 
-  if (exists) null;
   const like = await LiKe.create({
     owner: userId,
     likeOn: videoId,
